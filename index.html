@@ -672,6 +672,19 @@
     board.appendChild(a);
   });
 
+  /* ---- when does "today" begin? ------------------------------------
+     Both the verse and the background photo advance on this counter.
+     Rolling over at 6am (not midnight) means the change has already
+     happened before anyone opens a Chromebook, and nothing shifts
+     under a student during the school day.
+     Change ROLLOVER_HOUR if you ever want a different time. */
+  const ROLLOVER_HOUR = 6;
+  function schoolDay(){
+    const d = new Date(Date.now() - ROLLOVER_HOUR*3600000);
+    const start = new Date(d.getFullYear(), 0, 0);
+    return Math.floor((d - start) / 86400000);
+  }
+
   /* ---- verse of the day -------------------------------------------
      A local list -- nothing is fetched, nothing can go down, no ads
      are possible, and you control every word that appears.
@@ -736,9 +749,7 @@
 
   (function(){
     if (!VERSES.length){ document.getElementById("verseWrap").style.display="none"; return; }
-    const now = new Date(), start = new Date(now.getFullYear(),0,0);
-    const day = Math.floor((now - start)/86400000);
-    const v = VERSES[day % VERSES.length];
+    const v = VERSES[schoolDay() % VERSES.length];
 
     document.getElementById("verseRef").textContent  = v[1];
     document.getElementById("verseRef2").textContent = v[1];
@@ -831,15 +842,12 @@
     }
     function save(p){ try{ localStorage.setItem("bgPref", JSON.stringify(p)); }catch(e){} }
 
-    function todaysNumber(){
-      const now=new Date(), start=new Date(now.getFullYear(),0,0);
-      return (Math.floor((now-start)/86400000) % BG_COUNT) + 1;
-    }
+    function todaysNumber(){ return (schoolDay() % BG_COUNT) + 1; }
     /* Filenames: tries 3-digit, then 2-digit, then unpadded, so it works
        whether the photos are named 001.jpg, 01.jpg, or 1.jpg. */
     function namesFor(n){
-      return [ "bg/"+String(n).padStart(3,"0")+"."+BG_EXT,
-               "bg/"+String(n).padStart(2,"0")+"."+BG_EXT,
+      return [ "bg/"+String(n).padStart(2,"0")+"."+BG_EXT,   // confirmed: 01.jpg
+               "bg/"+String(n).padStart(3,"0")+"."+BG_EXT,
                "bg/"+n+"."+BG_EXT ];
     }
 
