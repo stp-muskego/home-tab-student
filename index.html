@@ -242,7 +242,7 @@
     padding:11px 4px; border-radius:12px; transition:background 120ms ease;
   }
   .waffle-item:hover{background:rgba(31,39,51,.05);}
-  .waffle-item img{width:26px; height:26px; display:block;}
+  .waffle-item img{width:26px; height:26px; display:block; border-radius:6px;}
   .waffle-item span{font-size:10.5px; font-weight:500; color:var(--muted);}
 
   .foot{
@@ -322,10 +322,31 @@
     transition:opacity 170ms ease, transform 170ms ease;
   }
   .verse-wrap:hover .verse-body,
-  .verse-wrap.pinned .verse-body,
   .verse-pill:focus-visible + .verse-body{
     opacity:1; transform:translateY(0); pointer-events:auto;
   }
+
+  /* PINNED: the pill steps aside and the verse itself becomes the control.
+     A defined border (rather than a floating shadow) is the cue that this
+     one is held open on purpose, not just hovering. */
+  .verse-wrap.pinned .verse-pill{display:none;}
+  .verse-wrap.pinned .verse-body{
+    position:static; opacity:1; transform:none; pointer-events:auto;
+    border:1.5px solid rgba(31,39,51,.30);
+    box-shadow:0 6px 20px rgba(10,14,20,.16);
+    cursor:pointer;
+    transition:border-color 140ms ease, background 140ms ease;
+  }
+  .verse-wrap.pinned .verse-body:hover{
+    border-color:rgba(31,39,51,.55);
+    background:#fff;
+  }
+  /* small cross marks it as the same thing the pill was */
+  .verse-wrap.pinned .verse-body .vr::before{
+    content:"\2715  ";
+    font-weight:700; letter-spacing:0; color:#98A0AC;
+  }
+  .verse-wrap.pinned .verse-body:hover .vr::before{ color:#5A6470; }
   .verse-body .vt{
     font-family:"Instrument Serif",Georgia,serif; font-style:italic;
     font-size:19px; line-height:1.48; color:#141A23; display:block;
@@ -763,11 +784,20 @@
     /* remembers pinned-open or pinned-closed on this device */
     try{ if (localStorage.getItem("versePinned") === "1") wrap.classList.add("pinned"); }catch(e){}
 
+    function setPinned(on){
+      wrap.classList.toggle("pinned", on);
+      pill.setAttribute("aria-expanded", on ? "true" : "false");
+      try{ localStorage.setItem("versePinned", on ? "1" : "0"); }catch(e){}
+    }
     pill.addEventListener("click", e => {
-      e.stopPropagation();
-      const pinned = wrap.classList.toggle("pinned");
-      pill.setAttribute("aria-expanded", pinned ? "true" : "false");
-      try{ localStorage.setItem("versePinned", pinned ? "1" : "0"); }catch(e){}
+      e.stopPropagation(); setPinned(true);
+    });
+    /* once pinned, the open verse is the thing you click to put it away */
+    const body = document.getElementById("verseBody");
+    body.title = "Click to close";
+    body.addEventListener("click", e => {
+      if (!wrap.classList.contains("pinned")) return;
+      e.stopPropagation(); setPinned(false);
     });
   })();
 
@@ -1167,16 +1197,23 @@
   });
 
   /* ---- Google apps switcher ---- */
+  /* Drive, Classroom and Gmail sit here as well as on the board on purpose --
+     anyone who reaches for the waffle out of habit still finds them.
+     Entries with "icon" reuse a tile already embedded in this file (so they
+     always render); the rest pull Google's published product icon. */
   const WAFFLE_APPS = [
-    { name:"Docs",     url:"https://docs.google.com",         key:"docs",     color:"#4285F4" },
-    { name:"Slides",   url:"https://slides.google.com",       key:"slides",   color:"#F4B400" },
-    { name:"Sheets",   url:"https://sheets.google.com",       key:"sheets",   color:"#0F9D58" },
-    { name:"Forms",    url:"https://forms.google.com",        key:"forms",    color:"#7248B9" },
-    { name:"Calendar", url:"https://calendar.google.com",     key:"calendar", color:"#4285F4" },
-    { name:"Vids",     url:"https://vids.google.com",         key:"vids",     color:"#4285F4" },
-    { name:"Drawings", url:"https://docs.google.com/drawings",key:"drawings", color:"#EA4335" },
-    { name:"Earth",    url:"https://earth.google.com",        key:"earth",    color:"#0F9D58" },
-    { name:"Maps",     url:"https://maps.google.com",         key:"maps",     color:"#EA4335" }
+    { name:"Drive",    url:"https://drive.google.com",        icon:"drive",     color:"#4285F4" },
+    { name:"Classroom",url:"https://classroom.google.com",    icon:"classroom", color:"#0F9D58" },
+    { name:"Gmail",    url:"https://mail.google.com",         icon:"gmail",     color:"#EA4335" },
+    { name:"Docs",     url:"https://docs.google.com",         key:"docs",       color:"#4285F4" },
+    { name:"Slides",   url:"https://slides.google.com",       key:"slides",     color:"#F4B400" },
+    { name:"Sheets",   url:"https://sheets.google.com",       key:"sheets",     color:"#0F9D58" },
+    { name:"Forms",    url:"https://forms.google.com",        key:"forms",      color:"#7248B9" },
+    { name:"Calendar", url:"https://calendar.google.com",     key:"calendar",   color:"#4285F4" },
+    { name:"Vids",     url:"https://vids.google.com",         key:"vids",       color:"#4285F4" },
+    { name:"Drawings", url:"https://docs.google.com/drawings",key:"drawings",   color:"#EA4335" },
+    { name:"Earth",    url:"https://earth.google.com",        key:"earth",      color:"#0F9D58" },
+    { name:"Maps",     url:"https://maps.google.com",         key:"maps",       color:"#EA4335" }
   ];
 
   const wpanel = document.getElementById("wafflePanel");
@@ -1186,7 +1223,9 @@
     /* Google publishes each product's icon at a predictable path; if one is
        ever missing we fall back to a clean lettered tile in its brand colour. */
     const ico = document.createElement("img"); ico.alt = ""; ico.loading = "lazy";
-    ico.src = "https://www.gstatic.com/images/branding/product/2x/"+app.key+"_48dp.png";
+    ico.src = (app.icon && ICONS[app.icon])
+      ? ICONS[app.icon]
+      : "https://www.gstatic.com/images/branding/product/2x/"+app.key+"_48dp.png";
     ico.onerror = function(){
       const f = document.createElement("span");
       f.className = "wfallback";
