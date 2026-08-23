@@ -46,14 +46,14 @@
      and set text-transform:none; letter-spacing:.01em; font-size:24px; */
   .school{
     font-family:"Inter",system-ui,sans-serif; font-weight:600;
-    font-size:12.5px; letter-spacing:.17em; text-transform:uppercase;
+    font-size:clamp(17px,2.4vw,24px); letter-spacing:.12em; text-transform:uppercase;
     margin:0; color:var(--muted); text-align:center;
   }
   body.photo .school{color:rgba(255,255,255,.95); text-shadow:0 1px 10px rgba(8,12,18,.6);}
   .motto{
     font-family:"Instrument Serif",Georgia,serif; font-weight:400;
-    font-size:15px; letter-spacing:.012em; font-style:italic;
-    margin:6px 0 0; color:var(--muted); text-align:center;
+    font-size:clamp(16px,2.2vw,22px); letter-spacing:.012em; font-style:italic;
+    margin:9px 0 0; color:var(--muted); text-align:center;
   }
   body.photo .motto{color:rgba(255,255,255,.9); text-shadow:0 1px 10px rgba(8,12,18,.6);}
 
@@ -787,7 +787,7 @@
      If a photo is missing or BG_COUNT is 0, the page just shows its
      clean light background -- it never looks broken.
      ------------------------------------------------------------ */
-  const BG_COUNT = 0;          // <-- set to how many photos are in bg/
+  const BG_COUNT = 115;        // how many photos are in bg/
   const BG_EXT   = "jpg";      // change to "png" if yours are PNGs
 
   /* The two plain choices. Tweak these hex values if you want a
@@ -833,7 +833,13 @@
       const now=new Date(), start=new Date(now.getFullYear(),0,0);
       return (Math.floor((now-start)/86400000) % BG_COUNT) + 1;
     }
-    function fileFor(n){ return "bg/"+String(n).padStart(2,"0")+"."+BG_EXT; }
+    /* Filenames: tries 3-digit, then 2-digit, then unpadded, so it works
+       whether the photos are named 001.jpg, 01.jpg, or 1.jpg. */
+    function namesFor(n){
+      return [ "bg/"+String(n).padStart(3,"0")+"."+BG_EXT,
+               "bg/"+String(n).padStart(2,"0")+"."+BG_EXT,
+               "bg/"+n+"."+BG_EXT ];
+    }
 
     function goPlain(hex){
       bgEl.classList.remove("on"); scrim.classList.remove("on");
@@ -851,15 +857,20 @@
       if (p.mode === "mountains")   n = MOUNTAIN_N;
       else if (p.mode === "lock" && p.n) n = p.n;
       else n = todaysNumber();
-      const url = fileFor(n);
+
+      const cands = namesFor(n);
+      let i = 0;
       const pre = new Image();
       pre.onload = function(){
-        bgEl.style.backgroundImage = "url('"+url+"')";
+        bgEl.style.backgroundImage = "url('"+cands[i-1]+"')";
         bgEl.classList.add("on"); scrim.classList.add("on");
         document.body.classList.add("photo");
       };
-      pre.onerror = function(){ goPlain(PLAIN.white); };
-      pre.src = url;
+      pre.onerror = function(){
+        if (i < cands.length) pre.src = cands[i++];
+        else goPlain(PLAIN.white);
+      };
+      pre.src = cands[i++];
       mark();
     }
     function mark(){
