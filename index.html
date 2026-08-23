@@ -176,6 +176,12 @@
     border-color:rgba(95,104,117,.8); color:#3D4552;
   }
   .topbar .tlink:focus-visible{outline:none; box-shadow:0 0 0 3px rgba(143,176,224,.6);}
+  /* muted until the search box has text -- clicking it empty would land
+     students on Google's personalised image feed, which is an endless
+     scroll of whatever the algorithm thinks they like */
+  .topbar .tlink.idle{opacity:.45; cursor:default;}
+  .topbar .tlink.idle:hover{background:transparent; border-color:rgba(95,104,117,.5); color:rgba(95,104,117,.95);}
+  body.photo .topbar .tlink.idle:hover{background:transparent; border-color:rgba(255,255,255,.75); color:rgba(255,255,255,.95);}
   body.photo .topbar .tlink{
     border-color:rgba(255,255,255,.75); color:rgba(255,255,255,.95);
   }
@@ -305,7 +311,7 @@
   .verse-pill:focus-visible{outline:none; box-shadow:0 0 0 3px rgba(143,176,224,.6);}
   body.photo .verse-pill{border-color:rgba(255,255,255,.75); color:rgba(255,255,255,.95);}
   body.photo .verse-pill:hover{background:rgba(255,255,255,.2); border-color:#fff; color:#fff;}
-  .verse-pill .vx{font-size:12px; line-height:1;}
+  .verse-pill .vx{font-size:15px; font-weight:600; line-height:1; margin-top:-1px;}
   .verse-pill .vref{
     font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
     white-space:nowrap;
@@ -343,8 +349,8 @@
   }
   /* small cross marks it as the same thing the pill was */
   .verse-wrap.pinned .verse-body .vr::before{
-    content:"\2715  ";
-    font-weight:700; letter-spacing:0; color:#98A0AC;
+    content:"\2212  ";                 /* minus = click to close */
+    font-weight:700; font-size:13px; letter-spacing:0; color:#98A0AC;
   }
   .verse-wrap.pinned .verse-body:hover .vr::before{ color:#5A6470; }
   .verse-body .vt{
@@ -469,6 +475,7 @@
   <div class="bg-scrim" id="scrim"></div>
 
   <div class="topbar">
+    <a class="tlink" href="https://mail.google.com">Gmail</a>
     <a class="tlink" id="imgLink" href="https://www.google.com/imghp?safe=active">Images</a>
     <div class="waffle-wrap">
     <button class="waffle-btn" id="waffleBtn" aria-label="Google apps" aria-expanded="false">
@@ -524,7 +531,7 @@
 
   <div class="verse-wrap" id="verseWrap">
     <button class="verse-pill" id="versePill" aria-expanded="false">
-      <span class="vx" aria-hidden="true">&#10015;</span>
+      <span class="vx" aria-hidden="true">+</span>
       <span class="vref" id="verseRef"></span>
     </button>
     <div class="verse-body" id="verseBody">
@@ -703,9 +710,14 @@
      Change ROLLOVER_HOUR if you ever want a different time. */
   const ROLLOVER_HOUR = 6;
   function schoolDay(){
+    /* Shift back by the rollover hour, then count whole days using the
+       resulting LOCAL calendar date. Reading the date parts (rather than
+       subtracting milliseconds from a January baseline) keeps this immune
+       to daylight saving -- otherwise the changeover would drift an hour
+       between summer and winter. It also runs continuously across New
+       Year instead of resetting. */
     const d = new Date(Date.now() - ROLLOVER_HOUR*3600000);
-    const start = new Date(d.getFullYear(), 0, 0);
-    return Math.floor((d - start) / 86400000);
+    return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
   }
 
   /* ---- verse of the day -------------------------------------------
@@ -1181,10 +1193,23 @@
   (function(){
     const link = document.getElementById("imgLink");
     const input = document.getElementById("q");
+
+    /* Deliberately does NOT open Google's Images landing page. That page now
+       serves a personalised "For you" feed -- endless scroll, tuned to the
+       student's own activity. SafeSearch filters explicit material but does
+       nothing about distraction, so the button simply waits for a query. */
+    function sync(){
+      const has = input.value.trim().length > 0;
+      link.classList.toggle("idle", !has);
+      link.title = has ? "Search images for what you typed" : "Type something first, then search images";
+    }
+    input.addEventListener("input", sync);
+    sync();
+
     link.addEventListener("click", e => {
-      const v = input.value.trim();
-      if (!v) return;              // empty: follow the href to Google Images
       e.preventDefault();
+      const v = input.value.trim();
+      if (!v){ input.focus(); return; }
       window.location.href = "https://www.google.com/search?tbm=isch&safe=active&q="+encodeURIComponent(v);
     });
   })();
