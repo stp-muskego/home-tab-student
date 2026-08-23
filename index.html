@@ -124,12 +124,11 @@
     box-shadow:0 0 0 2px var(--ring);}
   .badge{
     width:54px; height:54px; flex:0 0 auto;
-    border-radius:15px; overflow:hidden;
-    box-shadow:0 1px 2px rgba(10,14,20,.10), 0 3px 10px rgba(10,14,20,.13);
+    filter:drop-shadow(0 1px 2px rgba(10,14,20,.16)) drop-shadow(0 3px 8px rgba(10,14,20,.16));
     transition:transform 160ms cubic-bezier(.2,.8,.3,1);
   }
   .tile:hover .badge{transform:translateY(-2px) scale(1.04);}
-  .badge img{width:100%; height:100%; display:block; object-fit:cover; background:#fff;}
+  .badge img{width:100%; height:100%; display:block; object-fit:contain; background:transparent;}
   .badge .mono{
     width:100%; height:100%; display:flex; align-items:center; justify-content:center;
     background:var(--accent); color:#fff; font-family:"Instrument Serif",serif;
@@ -315,9 +314,9 @@
   .verse-body{
     position:absolute; bottom:calc(100% + 9px); left:0; width:max-content;
     max-width:min(400px,calc(100vw - 90px));
-    background:rgba(255,255,255,.94);
+    background:rgba(255,255,255,.96);
     -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
-    border-radius:15px; padding:16px 19px;
+    border-radius:15px; padding:18px 21px;
     box-shadow:0 12px 34px rgba(10,14,20,.20);
     opacity:0; transform:translateY(5px); pointer-events:none;
     transition:opacity 170ms ease, transform 170ms ease;
@@ -329,12 +328,12 @@
   }
   .verse-body .vt{
     font-family:"Instrument Serif",Georgia,serif; font-style:italic;
-    font-size:16.5px; line-height:1.5; color:#1F2733; display:block;
+    font-size:19px; line-height:1.48; color:#141A23; display:block;
   }
   .verse-body .vr{
-    display:block; margin-top:9px;
-    font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase;
-    color:#7A828F;
+    display:block; margin-top:10px;
+    font-size:11px; font-weight:700; letter-spacing:.13em; text-transform:uppercase;
+    color:#5A6470;
   }
 
   /* ---- background customize control (bottom-right) ---- */
@@ -423,6 +422,9 @@
     body{padding-top:110px;}
     .topbar .tlink{display:none;}   /* Images link folds away; waffle + account remain */
   }
+  /* the verse lives in the bottom-left corner; on small windows the board
+     grows into that space, so it steps aside rather than overlapping */
+  @media (max-width:900px), (max-height:700px){ .verse-wrap{display:none;} }
   @media (max-width:620px){ .board{grid-template-columns:repeat(4,1fr);} }
   @media (max-width:400px){ .board{grid-template-columns:repeat(3,1fr);} }
   @media (prefers-reduced-motion:reduce){ *{transition:none !important;} }
@@ -1151,7 +1153,7 @@
     const input = document.getElementById("q");
     link.addEventListener("click", e => {
       const v = input.value.trim();
-      if (!v){ e.preventDefault(); input.focus(); return; }
+      if (!v) return;              // empty: follow the href to Google Images
       e.preventDefault();
       window.location.href = "https://www.google.com/search?tbm=isch&safe=active&q="+encodeURIComponent(v);
     });
@@ -1166,22 +1168,25 @@
 
   /* ---- Google apps switcher ---- */
   const WAFFLE_APPS = [
-    { name:"Docs",     url:"https://docs.google.com",      domain:"docs.google.com",      color:"#4285F4" },
-    { name:"Slides",   url:"https://slides.google.com",    domain:"slides.google.com",    color:"#F4B400" },
-    { name:"Sheets",   url:"https://sheets.google.com",    domain:"sheets.google.com",    color:"#0F9D58" },
-    { name:"Forms",    url:"https://forms.google.com",     domain:"forms.google.com",     color:"#7248B9" },
-    { name:"Calendar", url:"https://calendar.google.com",  domain:"calendar.google.com",  color:"#4285F4" },
-    { name:"Vids",     url:"https://vids.google.com",      domain:"vids.google.com",      color:"#4285F4" },
-    { name:"Drawings", url:"https://docs.google.com/drawings", domain:"docs.google.com",   color:"#EA4335" },
-    { name:"Earth",    url:"https://earth.google.com",     domain:"earth.google.com",     color:"#0F9D58" },
-    { name:"Maps",     url:"https://maps.google.com",      domain:"maps.google.com",      color:"#EA4335" }
+    { name:"Docs",     url:"https://docs.google.com",         key:"docs",     color:"#4285F4" },
+    { name:"Slides",   url:"https://slides.google.com",       key:"slides",   color:"#F4B400" },
+    { name:"Sheets",   url:"https://sheets.google.com",       key:"sheets",   color:"#0F9D58" },
+    { name:"Forms",    url:"https://forms.google.com",        key:"forms",    color:"#7248B9" },
+    { name:"Calendar", url:"https://calendar.google.com",     key:"calendar", color:"#4285F4" },
+    { name:"Vids",     url:"https://vids.google.com",         key:"vids",     color:"#4285F4" },
+    { name:"Drawings", url:"https://docs.google.com/drawings",key:"drawings", color:"#EA4335" },
+    { name:"Earth",    url:"https://earth.google.com",        key:"earth",    color:"#0F9D58" },
+    { name:"Maps",     url:"https://maps.google.com",         key:"maps",     color:"#EA4335" }
   ];
+
   const wpanel = document.getElementById("wafflePanel");
   WAFFLE_APPS.forEach(app => {
     const it = document.createElement("a");
     it.className = "waffle-item"; it.href = app.url; it.setAttribute("role","menuitem");
+    /* Google publishes each product's icon at a predictable path; if one is
+       ever missing we fall back to a clean lettered tile in its brand colour. */
     const ico = document.createElement("img"); ico.alt = ""; ico.loading = "lazy";
-    ico.src = "https://www.google.com/s2/favicons?domain="+app.domain+"&sz=64";
+    ico.src = "https://www.gstatic.com/images/branding/product/2x/"+app.key+"_48dp.png";
     ico.onerror = function(){
       const f = document.createElement("span");
       f.className = "wfallback";
