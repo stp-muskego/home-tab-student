@@ -300,7 +300,6 @@
   .wx-time{font-size:17px; font-weight:600; color:var(--ink); letter-spacing:-.02em;}
   .wx-day{font-size:11px; font-weight:500; color:var(--muted);}
   .weather{text-decoration:none;}
-  .weather:hover{background:rgba(255,255,255,.94);}
   .wx-sep{width:1px; height:26px; background:rgba(31,39,51,.12); display:none;}
   .wx-sep.on{display:block;}
   .wx-block{display:none; align-items:center; gap:9px;}
@@ -308,6 +307,18 @@
   .wx-ico{font-size:21px; line-height:1;}
   .wx-t{font-size:16px; font-weight:600; color:var(--ink); letter-spacing:-.01em; line-height:1.15;}
   .wx-d{font-size:10.5px; font-weight:500; color:var(--muted); line-height:1.2;}
+  .wx-refresh{
+    display:none; border:0; background:transparent; padding:4px; margin-left:2px;
+    border-radius:50%; cursor:pointer; color:rgba(31,39,51,.45);
+    align-items:center; justify-content:center; flex:0 0 auto;
+  }
+  .wx-refresh.on{display:flex;}
+  .wx-refresh:hover{background:rgba(31,39,51,.08); color:rgba(31,39,51,.7);}
+  .wx-refresh svg{width:14px; height:14px;}
+  .wx-refresh.spinning svg{animation:wx-spin 700ms linear;}
+  @keyframes wx-spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+  body.photo .wx-refresh{color:rgba(255,255,255,.55);}
+  body.photo .wx-refresh:hover{background:rgba(255,255,255,.15); color:#fff;}
 
   /* ---- announcement strip ---- */
   .announce{
@@ -396,6 +407,50 @@
 
   /* ---- background customize control (bottom-right) ---- */
   .cust-wrap{position:fixed; bottom:20px; right:20px; z-index:25; display:none;}
+
+  /* ---- quick notes (bottom-right, beside the background control) ---- */
+  .notes-wrap{position:fixed; bottom:20px; right:68px; z-index:25;}
+  .notes-btn{
+    width:38px; height:38px; border-radius:50%; cursor:pointer;
+    background:transparent; border:1.6px solid rgba(95,104,117,.5);
+    color:rgba(95,104,117,.9);
+    display:flex; align-items:center; justify-content:center;
+    transition:background 140ms ease, border-color 140ms ease, color 140ms ease;
+  }
+  .notes-btn svg{width:18px; height:18px;}
+  .notes-btn:hover{background:rgba(255,255,255,.4); border-color:rgba(95,104,117,.8); color:#3D4552;}
+  .notes-btn:focus-visible{outline:none; box-shadow:0 0 0 3px rgba(143,176,224,.6);}
+  body.photo .notes-btn{border-color:rgba(255,255,255,.75); color:rgba(255,255,255,.92);}
+  body.photo .notes-btn:hover{background:rgba(255,255,255,.2); border-color:#fff; color:#fff;}
+
+  .notes-panel{
+    position:absolute; bottom:50px; right:0; width:240px;
+    background:#fff; border:1px solid var(--line); border-radius:16px;
+    padding:12px; box-shadow:0 14px 40px rgba(10,14,20,.20);
+    display:none;
+  }
+  .notes-panel.open{display:block;}
+  .notes-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:2px 4px 9px; margin-bottom:6px; border-bottom:1px solid var(--line);
+    font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--muted);
+  }
+  .notes-clear{
+    border:0; background:transparent; cursor:pointer; padding:0;
+    font:inherit; font-size:10.5px; font-weight:600; letter-spacing:.04em;
+    text-transform:none; color:#B0473F;
+  }
+  .notes-clear:hover{text-decoration:underline;}
+  .notes-list{display:flex; flex-direction:column; gap:3px;}
+  .notes-row{display:flex; align-items:center; gap:8px;}
+  .notes-row .dot{width:4px; height:4px; border-radius:50%; background:#9AA2AE; flex:0 0 auto;}
+  .notes-row input{
+    flex:1; min-width:0; border:0; background:transparent; font:inherit;
+    font-size:13px; color:var(--ink); padding:5px 2px; border-radius:6px;
+  }
+  .notes-row input:focus{outline:none; background:rgba(31,39,51,.045);}
+  .notes-row input::placeholder{color:#B7BEC8;}
   .cust-wrap.on{display:block;}
   .cust-btn{
     width:38px; height:38px; border-radius:50%; cursor:pointer;
@@ -490,7 +545,7 @@
 </head>
 <body>
 
-  <a class="weather" id="weather" href="https://weather.com/weather/today/l/53150" aria-label="Time, date, and local forecast">
+  <div class="weather" id="weather" aria-label="Time, date, and local forecast">
     <span class="wx-date">
       <span class="wx-time" id="wxTime"></span>
       <span class="wx-day" id="wxDay"></span>
@@ -500,7 +555,10 @@
       <span class="wx-ico" id="wxIco"></span>
       <span><span class="wx-t" id="wxT"></span><br><span class="wx-d" id="wxD"></span></span>
     </span>
-  </a>
+    <button type="button" class="wx-refresh" id="wxRefresh" aria-label="Refresh weather" title="Refresh weather">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>
+    </button>
+  </div>
 
   <div class="bg-frame"><img class="bg" id="bg" alt=""></div>
   <div class="bg-scrim" id="scrim"></div>
@@ -567,6 +625,19 @@
     <div class="verse-body" id="verseBody">
       <span class="vt" id="verseText"></span>
       <span class="vr" id="verseRef2"></span>
+    </div>
+  </div>
+
+  <div class="notes-wrap" id="notesWrap">
+    <button class="notes-btn" id="notesBtn" aria-label="Quick notes" aria-expanded="false" title="Quick notes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="7" x2="18" y2="7"/><line x1="8" y1="12" x2="18" y2="12"/><line x1="8" y1="17" x2="14" y2="17"/><circle cx="5" cy="7" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="17" r="1"/></svg>
+    </button>
+    <div class="notes-panel" id="notesPanel">
+      <div class="notes-head">
+        <span>Notes</span>
+        <button type="button" class="notes-clear" id="notesClear">Clear</button>
+      </div>
+      <div class="notes-list" id="notesList"></div>
     </div>
   </div>
 
@@ -1156,40 +1227,59 @@
       document.getElementById("wxIco").textContent = c[0];
       document.getElementById("wxT").textContent = Math.round(d.temp)+"\u00B0F";
 
-      /* line 2: condition, feels-like when it differs, H/L, rain chance */
+      /* line 2: condition, feels-like when it differs, TODAY'S forecast
+         range, rain chance. Labeled "Today" -- not "now" -- because the
+         high/low are the whole day's forecast: before the afternoon peak
+         or after the morning low, the current reading will never equal
+         them. That's not a data error, it's what every weather app does;
+         the label just says so instead of implying they should match. */
       const bits = [c[1]];
       if (d.feels != null && Math.abs(d.feels - d.temp) >= 3)
         bits.push("Feels "+Math.round(d.feels)+"\u00B0");
-      if (d.hi != null) bits.push("H "+Math.round(d.hi)+"\u00B0 L "+Math.round(d.lo)+"\u00B0");
+      if (d.hi != null) bits.push("Today "+Math.round(d.hi)+"\u00B0/"+Math.round(d.lo)+"\u00B0");
       if (d.rain != null && d.rain >= 20) bits.push(d.rain+"% rain");
       document.getElementById("wxD").textContent = bits.join("  \u00B7  ");
 
       document.getElementById("wxBlock").classList.add("on");
       document.getElementById("wxSep").classList.add("on");
+      document.getElementById("wxRefresh").classList.add("on");
+    }
+
+    function fetchLive(){
+      const url = "https://api.open-meteo.com/v1/forecast?latitude="+WX_LAT+"&longitude="+WX_LON+
+                  "&current=temperature_2m,apparent_temperature,weather_code"+
+                  "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max"+
+                  "&temperature_unit=fahrenheit&timezone=auto&forecast_days=1";
+      return fetch(url).then(r=>r.json()).then(j=>{
+        const d = {
+          temp: j.current.temperature_2m,
+          feels: j.current.apparent_temperature,
+          code: j.current.weather_code,
+          rain: (j.daily.precipitation_probability_max||[])[0],
+          hi: j.daily.temperature_2m_max[0],
+          lo: j.daily.temperature_2m_min[0],
+          at: Date.now()
+        };
+        show(d);
+        try{ localStorage.setItem("wx2", JSON.stringify(d)); }catch(e){}
+      });
     }
 
     try{
       const c = JSON.parse(localStorage.getItem("wx2")||"null");
-      if (c && typeof c.temp === "number" && Date.now()-c.at < CACHE_MINUTES*60000){ show(c); return; }
-    }catch(e){}
+      if (c && typeof c.temp === "number" && Date.now()-c.at < CACHE_MINUTES*60000){ show(c); }
+      else { fetchLive().catch(()=>{}); }
+    }catch(e){ fetchLive().catch(()=>{}); }
 
-    const url = "https://api.open-meteo.com/v1/forecast?latitude="+WX_LAT+"&longitude="+WX_LON+
-                "&current=temperature_2m,apparent_temperature,weather_code"+
-                "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max"+
-                "&temperature_unit=fahrenheit&timezone=auto&forecast_days=1";
-    fetch(url).then(r=>r.json()).then(j=>{
-      const d = {
-        temp: j.current.temperature_2m,
-        feels: j.current.apparent_temperature,
-        code: j.current.weather_code,
-        rain: (j.daily.precipitation_probability_max||[])[0],
-        hi: j.daily.temperature_2m_max[0],
-        lo: j.daily.temperature_2m_min[0],
-        at: Date.now()
-      };
-      show(d);
-      try{ localStorage.setItem("wx2", JSON.stringify(d)); }catch(e){}
-    }).catch(()=>{ /* offline or blocked: time and date still show */ });
+    /* manual refresh: always hits the network, ignoring the cache */
+    const refreshBtn = document.getElementById("wxRefresh");
+    refreshBtn.addEventListener("click", e=>{
+      e.preventDefault(); e.stopPropagation();
+      refreshBtn.classList.add("spinning");
+      fetchLive().finally(()=>{
+        setTimeout(()=>refreshBtn.classList.remove("spinning"), 400);
+      });
+    });
   })();
 
   /* ---- voice search --------------------------------------------
@@ -1329,6 +1419,67 @@
       const v = input.value.trim();
       if (!v){ input.focus(); return; }
       window.location.href = "https://www.google.com/search?tbm=isch&safe=active&q="+encodeURIComponent(v);
+    });
+  })();
+
+  /* ---- quick notes ----------------------------------------------
+     Ten plain lines, autosaved as you type. Lives in this device's
+     storage under this student's own Google account -- it stays all
+     year unless they hit Clear, and only disappears entirely if the
+     device itself is retired, since a new Chromebook starts empty. */
+  const NOTES_MAX = 10;
+  (function(){
+    const btn   = document.getElementById("notesBtn");
+    const panel = document.getElementById("notesPanel");
+    const list  = document.getElementById("notesList");
+    const clearBtn = document.getElementById("notesClear");
+    let saveTimer;
+
+    function load(){
+      try{
+        const a = JSON.parse(localStorage.getItem("quickNotes")||"[]");
+        return Array.isArray(a) ? a : [];
+      }catch(e){ return []; }
+    }
+    function save(values){
+      try{ localStorage.setItem("quickNotes", JSON.stringify(values)); }catch(e){}
+    }
+    function currentValues(){
+      return Array.from(list.querySelectorAll("input")).map(i=>i.value);
+    }
+    function scheduleSave(){
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(()=>save(currentValues()), 250);
+    }
+
+    const stored = load();
+    for (let i=0; i<NOTES_MAX; i++){
+      const row = document.createElement("div"); row.className = "notes-row";
+      row.innerHTML = '<span class="dot"></span>';
+      const input = document.createElement("input");
+      input.type = "text"; input.placeholder = "Note or reminder\u2026";
+      input.value = stored[i] || "";
+      input.maxLength = 120;
+      input.addEventListener("input", scheduleSave);
+      row.appendChild(input);
+      list.appendChild(row);
+    }
+
+    btn.addEventListener("click", e=>{
+      e.stopPropagation();
+      const open = panel.classList.toggle("open");
+      btn.setAttribute("aria-expanded", open?"true":"false");
+      if (open) list.querySelector("input").focus();
+    });
+    document.addEventListener("click", e=>{
+      if (panel.contains(e.target) || btn.contains(e.target)) return;
+      panel.classList.remove("open"); btn.setAttribute("aria-expanded","false");
+    });
+    clearBtn.addEventListener("click", e=>{
+      e.stopPropagation();
+      list.querySelectorAll("input").forEach(i=>i.value="");
+      save([]);
+      list.querySelector("input").focus();
     });
   })();
 
