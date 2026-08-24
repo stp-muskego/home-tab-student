@@ -27,9 +27,13 @@
   a{color:inherit; text-decoration:none;}
 
   /* ---------- background ---------- */
-  .bg{position:fixed; inset:0; z-index:-3; background:#F6F7F9;
-      background-size:cover; background-position:center;
-      opacity:0; transition:opacity 700ms ease;}
+  /* A real <img>, not a CSS background-image. position:fixed + a CSS
+     background at browser zoom levels other than 100% is a known Chromium
+     bug -- the compositor can repaint the image tiled instead of scaled.
+     An actual <img> with object-fit:cover scales correctly at any zoom. */
+  .bg-frame{position:fixed; inset:0; z-index:-3; overflow:hidden; background:#F6F7F9;}
+  .bg{width:100%; height:100%; object-fit:cover; object-position:center;
+      display:block; opacity:0; transition:opacity 700ms ease;}
   .bg.on{opacity:1;}
   .bg-scrim{position:fixed; inset:0; z-index:-2; pointer-events:none;
       background:linear-gradient(180deg,rgba(12,16,22,.34) 0%,rgba(12,16,22,.10) 30%,rgba(12,16,22,.30) 100%);
@@ -72,7 +76,32 @@
   .search:hover{box-shadow:0 1px 4px rgba(12,16,22,.12), 0 12px 40px rgba(12,16,22,.16);}
   .search:focus-within{box-shadow:0 1px 4px rgba(12,16,22,.12), 0 12px 40px rgba(12,16,22,.18);}
   .search.suggesting{border-radius:28px 28px 0 0; box-shadow:0 1px 4px rgba(12,16,22,.12);}
-  .search .g{flex:0 0 auto; display:flex;}
+  /* search-engine switcher: click the icon to pick where the box searches */
+  .engine{position:relative; flex:0 0 auto;}
+  .engine-btn{
+    display:flex; align-items:center; gap:3px; border:0; background:transparent;
+    padding:2px; cursor:pointer; border-radius:8px;
+  }
+  .engine-btn:hover{background:rgba(31,39,51,.06);}
+  .engine-btn:focus-visible{outline:none; box-shadow:0 0 0 2px var(--ring);}
+  .engine-btn .chev{width:9px; height:9px; opacity:.55;}
+  .engine-menu{
+    position:absolute; top:calc(100% + 10px); left:-6px; width:190px;
+    background:#fff; border:1px solid var(--line); border-radius:14px;
+    padding:6px; box-shadow:0 12px 34px rgba(10,14,20,.18);
+    display:none; z-index:40;
+  }
+  .engine-menu.open{display:block;}
+  .engine-opt{
+    display:flex; align-items:center; gap:10px; width:100%;
+    border:0; background:transparent; text-align:left; cursor:pointer;
+    font:inherit; font-size:13.5px; color:var(--ink);
+    padding:9px 10px; border-radius:9px;
+  }
+  .engine-opt:hover{background:rgba(31,39,51,.055);}
+  .engine-opt img{width:18px; height:18px; border-radius:5px; flex:0 0 auto;}
+  .engine-opt.sel{font-weight:600;}
+  .engine-opt.sel::after{content:"\2713"; margin-left:auto; color:var(--accent);}
   .search input{
     flex:1 1 auto; border:0; outline:0; background:transparent;
     font:inherit; font-size:16px; font-weight:400; color:var(--ink); height:100%;
@@ -322,7 +351,7 @@
   .verse-body{
     position:absolute; bottom:calc(100% + 9px); left:0; width:max-content;
     max-width:min(400px,calc(100vw - 90px));
-    background:rgba(255,255,255,.96);
+    background:rgba(255,255,255,.78);
     -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
     border-radius:15px; padding:18px 21px;
     box-shadow:0 12px 34px rgba(10,14,20,.20);
@@ -473,7 +502,7 @@
     </span>
   </a>
 
-  <div class="bg" id="bg"></div>
+  <div class="bg-frame"><img class="bg" id="bg" alt=""></div>
   <div class="bg-scrim" id="scrim"></div>
 
   <div class="topbar">
@@ -503,17 +532,16 @@
   </div>
 
   <div class="search-wrap">
-    <form class="search" action="https://www.google.com/search" method="GET" role="search" aria-label="Search Google">
-      <span class="g" aria-hidden="true">
-        <svg width="21" height="21" viewBox="0 0 48 48">
-          <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
-          <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
-          <path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/>
-          <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
-        </svg>
-      </span>
+    <form class="search" id="searchForm" action="https://www.google.com/search" method="GET" role="search" aria-label="Search Google">
+      <div class="engine" id="engineWrap">
+        <button type="button" class="engine-btn" id="engineBtn" aria-label="Choose what to search" aria-expanded="false">
+          <span id="engineIcon" aria-hidden="true"></span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="#5F6875" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="engine-menu" id="engineMenu" role="menu"></div>
+      </div>
       <input type="text" name="q" id="q" placeholder="Search Google or find an app" autocomplete="off" spellcheck="false" aria-label="Search terms" autofocus>
-      <input type="hidden" name="safe" value="active">
+      <input type="hidden" name="safe" value="active" id="safeField">
       <button type="button" class="tool" id="micBtn" aria-label="Search by voice" title="Search by voice">
         <svg viewBox="0 0 24 24" fill="#5F6875"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3z"/><path d="M18 11a1 1 0 0 0-2 0 4 4 0 0 1-8 0 1 1 0 0 0-2 0 6 6 0 0 0 5 5.9V20h2v-3.1A6 6 0 0 0 18 11z"/></svg>
       </button>
@@ -901,7 +929,8 @@
       bgEl.classList.remove("on"); scrim.classList.remove("on");
       document.body.classList.remove("photo");
       document.body.style.background = hex;
-      bgEl.style.background = hex;
+      bgEl.removeAttribute("src");
+      bgEl.parentElement.style.background = hex;   // the frame behind the <img>
     }
 
     function paint(){
@@ -918,7 +947,7 @@
       let i = 0;
       const pre = new Image();
       pre.onload = function(){
-        bgEl.style.backgroundImage = "url('"+cands[i-1]+"')";
+        bgEl.src = cands[i-1];
         bgEl.classList.add("on"); scrim.classList.add("on");
         document.body.classList.add("photo");
       };
@@ -965,6 +994,93 @@
   })();
 
 
+
+  /* ---- search-engine switcher: Google web vs. Google Drive ---------
+     Click the icon left of the search box to choose where the box
+     searches. Drive uses drive.google.com/drive/search?q=... , which
+     searches the signed-in student's own Drive (titles and contents) --
+     no setup needed, since every Chromebook is already signed in.
+     The choice is remembered per device. Add more engines later by
+     adding to ENGINES below. */
+  const GOOGLE_SVG =
+    '<svg width="21" height="21" viewBox="0 0 48 48">'+
+    '<path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>'+
+    '<path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>'+
+    '<path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/>'+
+    '<path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>'+
+    '</svg>';
+
+  const ENGINES = [
+    { key:"google", name:"Google",       placeholder:"Search Google or find an app" },
+    { key:"drive",  name:"Google Drive", placeholder:"Search your Google Drive" },
+  ];
+
+  (function(){
+    const wrap  = document.getElementById("engineWrap");
+    const btn   = document.getElementById("engineBtn");
+    const menu  = document.getElementById("engineMenu");
+    const icon  = document.getElementById("engineIcon");
+    const form  = document.getElementById("searchForm");
+    const input = document.getElementById("q");
+    const safe  = document.getElementById("safeField");
+
+    function iconHTML(key){
+      return key === "drive"
+        ? '<img src="'+ICONS.drive+'" alt="" style="width:21px;height:21px;border-radius:5px;">'
+        : GOOGLE_SVG;
+    }
+
+    function current(){
+      try{ return localStorage.getItem("searchEngine") || "google"; }
+      catch(e){ return "google"; }
+    }
+
+    function apply(key){
+      icon.innerHTML = iconHTML(key);
+      const eng = ENGINES.find(e=>e.key===key) || ENGINES[0];
+      input.placeholder = eng.placeholder;
+      menu.querySelectorAll(".engine-opt").forEach(o=>
+        o.classList.toggle("sel", o.dataset.key===key));
+    }
+
+    ENGINES.forEach(e=>{
+      const opt=document.createElement("button");
+      opt.type="button"; opt.className="engine-opt"; opt.dataset.key=e.key;
+      opt.setAttribute("role","menuitem");
+      opt.innerHTML = iconHTML(e.key) + "<span>"+e.name+"</span>";
+      opt.addEventListener("click", ev=>{
+        ev.stopPropagation();
+        try{ localStorage.setItem("searchEngine", e.key); }catch(err){}
+        apply(e.key);
+        menu.classList.remove("open"); btn.setAttribute("aria-expanded","false");
+        input.focus();
+      });
+      menu.appendChild(opt);
+    });
+
+    apply(current());
+
+    btn.addEventListener("click", e=>{
+      e.stopPropagation();
+      const open = menu.classList.toggle("open");
+      btn.setAttribute("aria-expanded", open?"true":"false");
+    });
+    document.addEventListener("click", ()=>{
+      menu.classList.remove("open"); btn.setAttribute("aria-expanded","false");
+    });
+
+    /* Drive has no SafeSearch parameter and a different destination, so
+       intercept submission only for Drive; Google keeps its normal GET
+       submit untouched (works even if this script hiccups). */
+    form.addEventListener("submit", e=>{
+      if (current() !== "drive") return;
+      e.preventDefault();
+      const v = input.value.trim();
+      window.location.href = v
+        ? "https://drive.google.com/drive/search?q="+encodeURIComponent(v)
+        : "https://drive.google.com/drive/my-drive";
+    });
+  })();
 
   /* ---- app suggestions ------------------------------------------
      As you type, this matches against YOUR tiles only. It never
