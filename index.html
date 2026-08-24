@@ -21,7 +21,7 @@
     font-family:"Inter",system-ui,-apple-system,sans-serif;
     display:flex; flex-direction:column; align-items:center;
     justify-content:flex-start;
-    padding:clamp(40px,10vh,96px) 24px 56px;
+    padding:clamp(28px,6vh,58px) 24px 56px;
     background:#F6F7F9;
   }
   a{color:inherit; text-decoration:none;}
@@ -31,8 +31,8 @@
      background at browser zoom levels other than 100% is a known Chromium
      bug -- the compositor can repaint the image tiled instead of scaled.
      An actual <img> with object-fit:cover scales correctly at any zoom. */
-  .bg-frame{position:fixed; inset:0; z-index:-3; overflow:hidden; background:#F6F7F9;}
-  .bg{width:100%; height:100%; object-fit:cover; object-position:center;
+  .bg{position:fixed; inset:0; z-index:-3;
+      width:100%; height:100%; object-fit:cover; object-position:center;
       display:block; opacity:0; transition:opacity 700ms ease;}
   .bg.on{opacity:1;}
   .bg-scrim{position:fixed; inset:0; z-index:-2; pointer-events:none;
@@ -307,18 +307,6 @@
   .wx-ico{font-size:21px; line-height:1;}
   .wx-t{font-size:16px; font-weight:600; color:var(--ink); letter-spacing:-.01em; line-height:1.15;}
   .wx-d{font-size:10.5px; font-weight:500; color:var(--muted); line-height:1.2;}
-  .wx-refresh{
-    display:none; border:0; background:transparent; padding:4px; margin-left:2px;
-    border-radius:50%; cursor:pointer; color:rgba(31,39,51,.45);
-    align-items:center; justify-content:center; flex:0 0 auto;
-  }
-  .wx-refresh.on{display:flex;}
-  .wx-refresh:hover{background:rgba(31,39,51,.08); color:rgba(31,39,51,.7);}
-  .wx-refresh svg{width:14px; height:14px;}
-  .wx-refresh.spinning svg{animation:wx-spin 700ms linear;}
-  @keyframes wx-spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-  body.photo .wx-refresh{color:rgba(255,255,255,.55);}
-  body.photo .wx-refresh:hover{background:rgba(255,255,255,.15); color:#fff;}
 
   /* ---- announcement strip ---- */
   .announce{
@@ -424,16 +412,22 @@
   body.photo .notes-btn:hover{background:rgba(255,255,255,.2); border-color:#fff; color:#fff;}
 
   .notes-panel{
-    position:absolute; bottom:50px; right:0; width:264px;
-    background:#fff; border:1px solid rgba(20,26,35,.06); border-radius:18px;
-    padding:14px 16px 14px; box-shadow:0 18px 46px rgba(10,14,20,.20);
+    position:absolute; bottom:52px; right:0; width:288px;
+    background:rgba(255,255,255,.86);
+    -webkit-backdrop-filter:blur(20px) saturate(1.3);
+    backdrop-filter:blur(20px) saturate(1.3);
+    border:1px solid rgba(255,255,255,.5);
+    border-radius:20px;
+    padding:15px 17px 15px;
+    box-shadow:0 2px 6px rgba(10,14,20,.06), 0 20px 50px rgba(10,14,20,.20);
     display:none;
   }
   .notes-panel.open{display:block;}
   .notes-head{
     display:flex; align-items:center; justify-content:space-between;
-    padding:0 1px 10px; margin-bottom:9px; border-bottom:1px solid var(--line);
-    font-size:10.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+    padding:0 1px 11px; margin-bottom:10px;
+    border-bottom:1px solid rgba(31,39,51,.10);
+    font-size:10.5px; font-weight:700; letter-spacing:.13em; text-transform:uppercase;
     color:var(--muted);
   }
   .notes-clear{
@@ -443,28 +437,36 @@
   }
   .notes-clear:hover{opacity:1; text-decoration:underline;}
 
-  /* Scroll-capped at roughly 10 lines of height, not a fixed item count --
-     a few long wrapped bullets take the same room as many short ones. */
+  /* Scroll-capped by height, and capped by count in the script, so the
+     panel can't grow without limit in either direction. */
   .notes-lines{
-    max-height:224px; overflow-y:auto; overflow-x:hidden;
+    max-height:236px; overflow-y:auto; overflow-x:hidden;
     display:flex; flex-direction:column;
-    scrollbar-width:thin; scrollbar-color:#D8DCE2 transparent;
+    scrollbar-width:thin; scrollbar-color:rgba(31,39,51,.18) transparent;
   }
   .notes-line{
-    position:relative; padding:5px 2px 5px 17px; margin:0;
-    font-size:13.5px; line-height:1.5; color:var(--ink);
+    position:relative; padding:6px 4px 6px 19px; margin:0;
+    font-size:14px; line-height:1.55; color:var(--ink);
     white-space:pre-wrap; word-wrap:break-word; word-break:break-word;
-    outline:none; border-radius:8px;
-    transition:background 100ms ease;
+    outline:none; border-radius:9px;
+    transition:background 120ms ease;
   }
   .notes-line::before{
-    content:"\2022"; position:absolute; left:3px; top:5px;
-    color:#B4BCC6; font-size:14px; line-height:1.5;
+    content:"\2022"; position:absolute; left:5px; top:6px;
+    color:#AAB2BE; font-size:15px; line-height:1.55;
   }
-  .notes-line:focus{background:rgba(31,39,51,.04);}
-  .notes-line:empty::after{content:"Note or reminder\2026"; color:#B7BEC8;}
+  .notes-line:focus{background:rgba(31,39,51,.05);}
+  .notes-line:empty::after{content:"Note or reminder\2026"; color:#AFB7C2;}
   .notes-lines::-webkit-scrollbar{width:6px;}
-  .notes-lines::-webkit-scrollbar-thumb{background:#D8DCE2; border-radius:3px;}
+  .notes-lines::-webkit-scrollbar-thumb{background:rgba(31,39,51,.18); border-radius:3px;}
+  .notes-lines::-webkit-scrollbar-track{background:transparent;}
+  /* brief nudge when Enter is pressed at the bullet limit */
+  .notes-lines.at-limit{animation:notes-nudge 220ms ease;}
+  @keyframes notes-nudge{
+    0%,100%{transform:translateX(0);}
+    30%{transform:translateX(-3px);}
+    70%{transform:translateX(3px);}
+  }
   .cust-wrap.on{display:block;}
   .cust-btn{
     width:38px; height:38px; border-radius:50%; cursor:pointer;
@@ -569,12 +571,9 @@
       <span class="wx-ico" id="wxIco"></span>
       <span><span class="wx-t" id="wxT"></span><br><span class="wx-d" id="wxD"></span></span>
     </span>
-    <button type="button" class="wx-refresh" id="wxRefresh" aria-label="Refresh weather" title="Refresh weather">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>
-    </button>
   </div>
 
-  <div class="bg-frame"><img class="bg" id="bg" alt=""></div>
+  <img class="bg" id="bg" alt="">
   <div class="bg-scrim" id="scrim"></div>
 
   <div class="topbar">
@@ -1015,7 +1014,6 @@
       document.body.classList.remove("photo");
       document.body.style.background = hex;
       bgEl.removeAttribute("src");
-      bgEl.parentElement.style.background = hex;   // the frame behind the <img>
     }
 
     function paint(){
@@ -1256,7 +1254,6 @@
 
       document.getElementById("wxBlock").classList.add("on");
       document.getElementById("wxSep").classList.add("on");
-      document.getElementById("wxRefresh").classList.add("on");
     }
 
     function fetchLive(){
@@ -1285,14 +1282,17 @@
       else { fetchLive().catch(()=>{}); }
     }catch(e){ fetchLive().catch(()=>{}); }
 
-    /* manual refresh: always hits the network, ignoring the cache */
-    const refreshBtn = document.getElementById("wxRefresh");
-    refreshBtn.addEventListener("click", e=>{
-      e.preventDefault(); e.stopPropagation();
-      refreshBtn.classList.add("spinning");
-      fetchLive().finally(()=>{
-        setTimeout(()=>refreshBtn.classList.remove("spinning"), 400);
-      });
+    /* No refresh button on purpose: pressing one wouldn't make the reading
+       more accurate, only less stale, and offering it implies a control the
+       student doesn't really have over the forecast. Instead, whenever the
+       tab comes back into view with a stale cache, it quietly refetches --
+       which is the only thing a button would have accomplished. */
+    document.addEventListener("visibilitychange", ()=>{
+      if (document.visibilityState !== "visible") return;
+      try{
+        const c = JSON.parse(localStorage.getItem("wx2")||"null");
+        if (!c || Date.now()-c.at >= CACHE_MINUTES*60000) fetchLive().catch(()=>{});
+      }catch(e){ fetchLive().catch(()=>{}); }
     });
   })();
 
@@ -1447,6 +1447,7 @@
      ten lines of height rather than capping at a fixed item count,
      since a few long wrapped bullets take the same room as many
      short ones. */
+  const NOTES_MAX = 14;   // most bullets allowed; height also caps the panel
   (function(){
     const btn      = document.getElementById("notesBtn");
     const panel    = document.getElementById("notesPanel");
@@ -1457,7 +1458,13 @@
     function load(){
       try{
         const a = JSON.parse(localStorage.getItem("quickNotes")||"[]");
-        return Array.isArray(a) ? a.filter(v=>typeof v==="string") : [];
+        if (!Array.isArray(a)) return [];
+        const clean = a.filter(v=>typeof v==="string");
+        /* Drop trailing blanks. The earlier version of this panel saved a
+           fixed run of ten empty strings, and without this they'd render
+           as a stack of empty bullets. Also keeps things tidy generally. */
+        while (clean.length && clean[clean.length-1].trim() === "") clean.pop();
+        return clean;
       }catch(e){ return []; }
     }
     function currentValues(){
@@ -1510,6 +1517,14 @@
 
       if (e.key === "Enter"){
         e.preventDefault();
+        /* hard cap on bullets -- the height cap handles a few long notes,
+           this handles someone leaning on Enter */
+        if (lines.querySelectorAll(".notes-line").length >= NOTES_MAX){
+          lines.classList.remove("at-limit");
+          void lines.offsetWidth;              // restart the nudge animation
+          lines.classList.add("at-limit");
+          return;
+        }
         const next = makeLine("");
         line.after(next);
         focusEnd(next);
