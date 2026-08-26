@@ -612,6 +612,43 @@
   .search .tool svg{width:19px; height:19px;}
   .search .tool.listening{background:rgba(234,67,53,.12);}
   .search .tool.listening svg{fill:#EA4335;}
+
+  /* ---- voice search overlay ---- */
+  .voice-overlay{
+    position:fixed; inset:0; z-index:100;
+    background:rgba(20,26,35,.55);
+    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:26px;
+  }
+  .voice-overlay[hidden]{display:none;}
+  .voice-cancel{
+    position:absolute; top:22px; right:24px;
+    width:40px; height:40px; border-radius:50%; border:0; cursor:pointer;
+    background:rgba(255,255,255,.14); color:#fff; font-size:22px; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .voice-cancel:hover{background:rgba(255,255,255,.24);}
+  .voice-mic{
+    width:84px; height:84px; border-radius:50%;
+    background:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 0 rgba(41,74,122,.55);
+    animation:voice-pulse 1.6s ease-out infinite;
+  }
+  .voice-mic svg{width:34px; height:34px;}
+  @keyframes voice-pulse{
+    0%  { box-shadow:0 0 0 0 rgba(41,74,122,.45); }
+    70% { box-shadow:0 0 0 26px rgba(41,74,122,0); }
+    100%{ box-shadow:0 0 0 0 rgba(41,74,122,0); }
+  }
+  .voice-text{
+    max-width:min(560px,84vw); text-align:center;
+    font-family:"Instrument Serif",Georgia,serif; font-style:italic;
+    font-size:clamp(20px,3.4vw,28px); line-height:1.4; color:#fff;
+    text-shadow:0 1px 10px rgba(0,0,0,.4);
+  }
+  .voice-text.placeholder{opacity:.7;}
   .divider{width:1px; height:22px; background:var(--line); flex:0 0 auto;}
   body.photo .foot{color:rgba(255,255,255,.9); text-shadow:0 1px 8px rgba(8,12,18,.6);}
   body.lt .foot{color:rgba(255,255,255,.9); text-shadow:0 1px 8px rgba(8,12,18,.6);}
@@ -794,6 +831,16 @@
       </div>
 
     </div>
+  </div>
+
+  <!-- voice search overlay: a dedicated listening screen instead of a
+       silent inline mic, so a pause mid-sentence doesn't cut it off -->
+  <div class="voice-overlay" id="voiceOverlay" hidden>
+    <button type="button" class="voice-cancel" id="voiceCancel" aria-label="Cancel">&times;</button>
+    <div class="voice-mic" id="voiceMic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3z"/><path d="M18 11a1 1 0 0 0-2 0 4 4 0 0 1-8 0 1 1 0 0 0-2 0 6 6 0 0 0 5 5.9V20h2v-3.1A6 6 0 0 0 18 11z"/></svg>
+    </div>
+    <div class="voice-text" id="voiceText">Listening&hellip;</div>
   </div>
 
 <script>
@@ -1605,30 +1652,83 @@
   })();
 
   /* ---- voice search --------------------------------------------
-     Uses the browser's built-in speech recognition (same thing that
-     powers Chrome's mic button). The first time a student taps it,
-     Chrome asks for microphone permission -- you can pre-approve
-     this for the student OU in the Admin console so they never see
-     the prompt. If the browser doesn't support it, the button hides. */
+     Opens a dedicated listening screen instead of just lighting up the
+     inline mic. That matters because a plain inline mic with Chrome's
+     default settings can finalize on the first short pause -- cutting
+     a student off after one word. This screen listens continuously and
+     shows the words live as they're recognized, the same way Google's
+     own "Speak now" screen does, so a normal pause mid-sentence doesn't
+     end the search early. It only finishes when the browser itself
+     detects real silence.
+
+     The first time a student taps it, Chrome asks for microphone
+     permission -- you can pre-approve this for the student OU in the
+     Admin console so they never see the prompt. If the browser doesn't
+     support speech recognition at all, the mic button hides. */
   (function(){
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const btn = document.getElementById("micBtn");
     if(!SR){ btn.style.display="none"; return; }
+
+    const overlay = document.getElementById("voiceOverlay");
+    const micEl   = document.getElementById("voiceMic");
+    const textEl  = document.getElementById("voiceText");
+    const cancel  = document.getElementById("voiceCancel");
+    const input   = document.getElementById("q");
+    const form    = document.getElementById("searchForm");
+
     const rec = new SR();
-    rec.lang="en-US"; rec.interimResults=false; rec.maxAlternatives=1;
-    let on=false;
-    btn.addEventListener("click", ()=>{
-      if(on){ rec.stop(); return; }
-      try{ rec.start(); on=true; btn.classList.add("listening"); }catch(e){}
+    rec.lang = "en-US";
+    rec.continuous = true;      // don't stop after the first phrase
+    rec.interimResults = true;  // show words as they're heard
+    rec.maxAlternatives = 1;
+
+    let finalText = "";
+    let cancelled = false;
+
+    function open(){
+      finalText = ""; cancelled = false;
+      textEl.textContent = "Listening\u2026";
+      textEl.classList.add("placeholder");
+      overlay.hidden = false;
+      try{ rec.start(); }catch(e){}
+    }
+    function close(){
+      overlay.hidden = true;
+      try{ rec.stop(); }catch(e){}
+    }
+
+    btn.addEventListener("click", open);
+    cancel.addEventListener("click", ()=>{ cancelled = true; close(); });
+    overlay.addEventListener("click", e=>{
+      if (e.target === overlay){ cancelled = true; close(); }
     });
+
     rec.onresult = e => {
-      const said = e.results[0][0].transcript;
-      const input=document.getElementById("q");
-      input.value = said;
-      document.querySelector(".search").submit();
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++){
+        const seg = e.results[i];
+        if (seg.isFinal) finalText += seg[0].transcript;
+        else interim += seg[0].transcript;
+      }
+      const shown = (finalText + interim).trim();
+      textEl.textContent = shown || "Listening\u2026";
+      textEl.classList.toggle("placeholder", !shown);
     };
-    rec.onend = ()=>{ on=false; btn.classList.remove("listening"); };
-    rec.onerror = ()=>{ on=false; btn.classList.remove("listening"); };
+
+    rec.onend = () => {
+      overlay.hidden = true;
+      const said = finalText.trim();
+      if (cancelled || !said) return;
+      input.value = said;
+      /* requestSubmit fires the real 'submit' event (with a fallback for
+         older engines), so the Google/Drive switcher still applies --
+         a plain form.submit() would skip it and always go to Google. */
+      if (form.requestSubmit) form.requestSubmit();
+      else document.querySelector(".go").click();
+    };
+
+    rec.onerror = () => { overlay.hidden = true; };
   })();
 
   /* ---- announcements, fed by a Google Sheet -----------------------
