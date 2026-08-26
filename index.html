@@ -774,7 +774,6 @@
         <button class="cust-opt" data-mode="white" role="menuitem"><span class="chk"></span><span class="swatch" style="background:#FFFFFF"></span>White</button>
         <button class="cust-opt" data-mode="gray"  role="menuitem"><span class="chk"></span><span class="swatch" style="background:#F1F3F4"></span>Gray</button>
         <button class="cust-opt" data-mode="blue"  role="menuitem"><span class="chk"></span><span class="swatch" style="background:#E4EEF9"></span>Blue</button>
-        <button class="cust-opt" data-mode="teal"  role="menuitem"><span class="chk"></span><span class="swatch" style="background:#E1F3F1"></span>Teal</button>
         <div class="cust-rule"></div>
         <button class="cust-opt" data-mode="custom" role="menuitem"><span class="chk"></span><span class="swatch" id="customSwatch" style="background:#8FB0E0"></span>Any color</button>
         <div class="cust-custom">
@@ -1164,7 +1163,7 @@
 
   /* The two plain choices. Tweak these hex values if you want a
      different flat background. */
-  const PLAIN = { white:"#FFFFFF", gray:"#F1F3F4", blue:"#E4EEF9", teal:"#E1F3F1" };
+  const PLAIN = { white:"#FFFFFF", gray:"#F1F3F4", blue:"#E4EEF9" };
 
   (function(){
     const wrap  = document.getElementById("custWrap");
@@ -1366,7 +1365,10 @@
       btn.setAttribute("aria-expanded", open ? "true" : "false");
       if (open) showView("viewMain");
     });
-    document.addEventListener("click", () => {
+    document.addEventListener("click", e => {
+      /* clicks inside the panel -- the hex box, the colour picker, the
+         copy field -- must not count as clicking away */
+      if (panel.contains(e.target) || btn.contains(e.target)) return;
       panel.classList.remove("open");
       btn.setAttribute("aria-expanded","false");
     });
@@ -1935,7 +1937,8 @@
     const open = wpanel.classList.toggle("open");
     wbtn.setAttribute("aria-expanded", open ? "true" : "false");
   });
-  document.addEventListener("click", () => {
+  document.addEventListener("click", e => {
+    if (wpanel.contains(e.target) || wbtn.contains(e.target)) return;
     wpanel.classList.remove("open");
     wbtn.setAttribute("aria-expanded","false");
   });
