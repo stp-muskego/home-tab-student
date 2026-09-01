@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Camera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1F2733; --muted:#5F6875; --line:#E3E6EA;
+    --accent:#1E48B8; --danger:#D9483F; --bg:#14161B;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:#fff;
+    font-family:"Inter",system-ui,-apple-system,sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    min-height:100vh; padding:20px 16px 28px;
+  }
+  a{color:inherit;}
+
+  .head{width:100%; max-width:760px; display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .head h1{font-size:15px; font-weight:600; margin:0; letter-spacing:.01em;}
+  .head .sub{font-size:11.5px; color:rgba(255,255,255,.5); margin-top:2px;}
+
+  .stage{
+    position:relative; width:100%; max-width:760px; aspect-ratio:4/3;
+    background:#000; border-radius:16px; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  video{width:100%; height:100%; object-fit:cover; transform:scaleX(-1); display:block;}
+  canvas{display:none;}
+
+  .msg{
+    position:absolute; inset:0; display:flex; flex-direction:column; gap:10px;
+    align-items:center; justify-content:center; text-align:center; padding:32px;
+    background:#14161B;
+  }
+  .msg[hidden]{display:none;}
+  .msg .icon{font-size:34px;}
+  .msg p{max-width:340px; font-size:14px; line-height:1.5; color:rgba(255,255,255,.75); margin:0;}
+  .msg button{
+    margin-top:6px; border:0; background:var(--accent); color:#fff;
+    font:inherit; font-weight:600; font-size:13.5px;
+    padding:10px 18px; border-radius:10px; cursor:pointer;
+  }
+
+  .rec-badge{
+    position:absolute; top:14px; left:14px; display:none; align-items:center; gap:7px;
+    background:rgba(0,0,0,.55); padding:6px 12px 6px 10px; border-radius:999px;
+    font-size:12.5px; font-weight:600; letter-spacing:.02em;
+  }
+  .rec-badge.on{display:flex;}
+  .rec-dot{width:8px; height:8px; border-radius:50%; background:var(--danger); animation:blink 1.1s ease-in-out infinite;}
+  @keyframes blink{50%{opacity:.25;}}
+
+  .flash{
+    position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none;
+  }
+  .flash.go{animation:flash-pop 260ms ease-out;}
+  @keyframes flash-pop{0%{opacity:.85;}100%{opacity:0;}}
+
+  .controls{
+    width:100%; max-width:760px; display:flex; align-items:center; justify-content:center;
+    gap:22px; margin-top:20px;
+  }
+  .side-btn{
+    width:46px; height:46px; border-radius:50%; border:1.6px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.06); color:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .side-btn:hover{background:rgba(255,255,255,.14);}
+  .side-btn svg{width:20px; height:20px;}
+  .side-btn[hidden]{visibility:hidden;}
+
+  .mode-toggle{
+    display:flex; background:rgba(255,255,255,.08); border-radius:999px; padding:3px; gap:2px;
+  }
+  .mode-toggle button{
+    border:0; background:transparent; color:rgba(255,255,255,.6); cursor:pointer;
+    font:inherit; font-size:12.5px; font-weight:600; padding:7px 16px; border-radius:999px;
+  }
+  .mode-toggle button.sel{background:#fff; color:#14161B;}
+
+  .shutter{
+    width:68px; height:68px; border-radius:50%; border:3px solid #fff;
+    background:transparent; cursor:pointer; padding:5px;
+  }
+  .shutter .fill{width:100%; height:100%; border-radius:50%; background:#fff; transition:all 140ms ease;}
+  .shutter:active .fill{transform:scale(.85);}
+  .shutter.recording .fill{background:var(--danger); border-radius:8px; width:60%; height:60%; margin:20%;}
+
+  .strip{
+    width:100%; max-width:760px; margin-top:18px;
+    display:flex; gap:10px; flex-wrap:wrap;
+  }
+  .thumb{
+    position:relative; width:88px; height:66px; border-radius:10px; overflow:hidden;
+    background:#000; border:1px solid rgba(255,255,255,.14);
+  }
+  .thumb img, .thumb video{width:100%; height:100%; object-fit:cover;}
+  .thumb .dl{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(0,0,0,0); opacity:0; transition:opacity 120ms ease; text-decoration:none;
+  }
+  .thumb:hover .dl{opacity:1; background:rgba(0,0,0,.35);}
+  .thumb .dl svg{width:18px; height:18px; stroke:#fff;}
+  .thumb .kind{
+    position:absolute; bottom:3px; left:5px; font-size:9px; font-weight:700;
+    background:rgba(0,0,0,.55); padding:1px 5px; border-radius:4px; letter-spacing:.04em;
+  }
+
+  .foot-note{max-width:760px; font-size:11px; line-height:1.5; color:rgba(255,255,255,.4); margin-top:18px; text-align:center;}
+
+  @media (max-width:480px){
+    .controls{gap:16px;}
+    .side-btn{width:40px; height:40px;}
+    .shutter{width:60px; height:60px;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div>
+      <h1>Camera</h1>
+      <div class="sub">Nothing is uploaded &mdash; everything stays on this device until you download it.</div>
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+    <div class="rec-badge" id="recBadge"><span class="rec-dot"></span><span id="recTime">0:00</span></div>
+    <div class="flash" id="flash"></div>
+
+    <div class="msg" id="msgAsk">
+      <div class="icon">&#128247;</div>
+      <p>This page needs your camera to work. Click below and choose <b>Allow</b> when Chrome asks.</p>
+      <button id="askBtn">Turn on camera</button>
+    </div>
+    <div class="msg" id="msgDenied" hidden>
+      <div class="icon">&#128683;</div>
+      <p>Camera access was blocked. Click the camera icon in the address bar and choose <b>Allow</b>, then reload this page.</p>
+    </div>
+    <div class="msg" id="msgNone" hidden>
+      <div class="icon">&#10067;</div>
+      <p>No camera was found on this device.</p>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="side-btn" id="switchBtn" hidden aria-label="Switch camera" title="Switch camera">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 12v-2a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 12v2a4 4 0 0 1-4 4H3"/></svg>
+    </button>
+
+    <div class="mode-toggle" id="modeToggle">
+      <button data-mode="photo" class="sel">Photo</button>
+      <button data-mode="video">Video</button>
+    </div>
+
+    <button class="shutter" id="shutter" aria-label="Take photo"><span class="fill"></span></button>
+
+    <button class="side-btn" id="muteBtn" hidden aria-label="Mute microphone" title="Mute microphone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3z"/><path d="M18 11a1 1 0 0 0-2 0 4 4 0 0 1-8 0 1 1 0 0 0-2 0 6 6 0 0 0 5 5.9V20h2v-3.1A6 6 0 0 0 18 11z"/></svg>
+    </button>
+  </div>
+
+  <div class="strip" id="strip"></div>
+
+  <p class="foot-note">Photos and videos save to your Downloads folder, same as any file you download. Close this tab when you're done &mdash; nothing is kept here.</p>
+
+<script>
+  const video    = document.getElementById("video");
+  const canvas   = document.getElementById("canvas");
+  const stage    = document.getElementById("stage");
+  const shutter  = document.getElementById("shutter");
+  const strip    = document.getElementById("strip");
+  const flash    = document.getElementById("flash");
+  const recBadge = document.getElementById("recBadge");
+  const recTime  = document.getElementById("recTime");
+  const switchBtn= document.getElementById("switchBtn");
+  const muteBtn  = document.getElementById("muteBtn");
+  const modeToggle = document.getElementById("modeToggle");
+
+  const msgAsk = document.getElementById("msgAsk");
+  const msgDenied = document.getElementById("msgDenied");
+  const msgNone = document.getElementById("msgNone");
+
+  let stream = null;
+  let mode = "photo";
+  let recorder = null, recChunks = [], recTimer = null, recSeconds = 0;
+  let devices = [];
+  let deviceIndex = 0;
+  let micOn = true;
+
+  function showMsg(el){
+    [msgAsk, msgDenied, msgNone].forEach(m => m.hidden = (m !== el));
+  }
+
+  async function listCameras(){
+    try{
+      const all = await navigator.mediaDevices.enumerateDevices();
+      devices = all.filter(d => d.kind === "videoinput");
+      switchBtn.hidden = devices.length < 2;
+    }catch(e){ /* not fatal -- just no switch button */ }
+  }
+
+  async function startCamera(){
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: devices.length
+          ? { deviceId: { exact: devices[deviceIndex].deviceId } }
+          : { facingMode: "user" },
+        audio: true
+      });
+      video.srcObject = stream;
+      showMsg(null);
+      stage.querySelectorAll(".msg").forEach(m => m.hidden = true);
+      await listCameras();
+      muteBtn.hidden = false;
+    }catch(err){
+      if (err.name === "NotFoundError" || err.name === "OverconstrainedError") showMsg(msgNone);
+      else showMsg(msgDenied);
+    }
+  }
+
+  document.getElementById("askBtn").addEventListener("click", startCamera);
+  // try immediately too -- if permission was already granted earlier,
+  // this skips the extra click
+  listCameras().then(startCamera).catch(()=>{});
+
+  switchBtn.addEventListener("click", ()=>{
+    if (!stream) return;
+    stream.getTracks().forEach(t=>t.stop());
+    deviceIndex = (deviceIndex + 1) % devices.length;
+    startCamera();
+  });
+
+  muteBtn.addEventListener("click", ()=>{
+    if (!stream) return;
+    micOn = !micOn;
+    stream.getAudioTracks().forEach(t => t.enabled = micOn);
+    muteBtn.style.opacity = micOn ? "1" : ".4";
+  });
+
+  modeToggle.addEventListener("click", e=>{
+    const b = e.target.closest("button[data-mode]");
+    if (!b || recorder) return;   // don't allow switching mid-recording
+    mode = b.dataset.mode;
+    modeToggle.querySelectorAll("button").forEach(x=>x.classList.toggle("sel", x===b));
+    shutter.setAttribute("aria-label", mode === "photo" ? "Take photo" : "Start recording");
+  });
+
+  function addThumb(url, kind){
+    const el = document.createElement("div"); el.className = "thumb";
+    const media = kind === "photo"
+      ? Object.assign(document.createElement("img"), {src:url})
+      : Object.assign(document.createElement("video"), {src:url, muted:true, loop:true});
+    if (kind === "video"){ media.addEventListener("mouseenter", ()=>media.play()); media.addEventListener("mouseleave", ()=>{media.pause();media.currentTime=0;}); }
+    const tag = document.createElement("span"); tag.className = "kind"; tag.textContent = kind === "photo" ? "PHOTO" : "VIDEO";
+    const dl = document.createElement("a"); dl.className = "dl"; dl.href = url;
+    dl.download = (kind === "photo" ? "photo-" : "video-") + stamp() + (kind === "photo" ? ".png" : ".webm");
+    dl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M6 12l6 6 6-6"/><path d="M4 21h16"/></svg>';
+    el.append(media, tag, dl);
+    strip.prepend(el);
+    /* download automatically too -- a thumbnail alone is easy to lose
+       track of, and these are meant to leave the tab, not live in it */
+    const auto = document.createElement("a");
+    auto.href = url; auto.download = dl.download; document.body.appendChild(auto);
+    auto.click(); auto.remove();
+  }
+
+  function stamp(){
+    const d = new Date();
+    const p = n => String(n).padStart(2,"0");
+    return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds());
+  }
+
+  function takePhoto(){
+    if (!stream) return;
+    const w = video.videoWidth, h = video.videoHeight;
+    if (!w) return;
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    /* the live preview is mirrored (natural, like looking in a mirror) --
+       flip the saved image to match what was actually seen on screen,
+       same convention every selfie camera uses */
+    ctx.translate(w, 0); ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, w, h);
+    canvas.toBlob(blob=>{
+      addThumb(URL.createObjectURL(blob), "photo");
+    }, "image/png");
+    flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go");
+  }
+
+  function startRecording(){
+    if (!stream) return;
+    recChunks = [];
+    const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
+      ? "video/webm;codecs=vp9,opus" : "video/webm";
+    recorder = new MediaRecorder(stream, { mimeType: mime });
+    recorder.ondataavailable = e => { if (e.data.size) recChunks.push(e.data); };
+    recorder.onstop = () => {
+      const blob = new Blob(recChunks, { type: mime });
+      addThumb(URL.createObjectURL(blob), "video");
+    };
+    recorder.start();
+    shutter.classList.add("recording");
+    recBadge.classList.add("on");
+    recSeconds = 0; recTime.textContent = "0:00";
+    recTimer = setInterval(()=>{
+      recSeconds++;
+      recTime.textContent = Math.floor(recSeconds/60)+":"+String(recSeconds%60).padStart(2,"0");
+    }, 1000);
+  }
+  function stopRecording(){
+    if (!recorder) return;
+    recorder.stop(); recorder = null;
+    shutter.classList.remove("recording");
+    recBadge.classList.remove("on");
+    clearInterval(recTimer);
+  }
+
+  shutter.addEventListener("click", ()=>{
+    if (mode === "photo") takePhoto();
+    else if (recorder) stopRecording();
+    else startRecording();
+  });
+
+  /* release the camera (and its on-indicator) if the tab is closed --
+     good practice, and reassures anyone watching for the camera light */
+  window.addEventListener("beforeunload", ()=>{
+    if (stream) stream.getTracks().forEach(t=>t.stop());
+  });
+</script>
+</body>
+</html>
