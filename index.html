@@ -216,10 +216,6 @@
   /* muted until the search box has text -- clicking it empty would land
      students on Google's personalised image feed, which is an endless
      scroll of whatever the algorithm thinks they like */
-  .topbar .tlink.idle{opacity:.45; cursor:default;}
-  .topbar .tlink.idle:hover{background:transparent; border-color:rgba(95,104,117,.5); color:rgba(95,104,117,.95);}
-  body.photo .topbar .tlink.idle:hover{background:transparent; border-color:rgba(255,255,255,.75); color:rgba(255,255,255,.95);}
-  body.lt .topbar .tlink.idle:hover{background:transparent; border-color:rgba(255,255,255,.75); color:rgba(255,255,255,.95);}
   body.photo .topbar .tlink,
   body.lt .topbar .tlink{
     border-color:rgba(255,255,255,.75); color:rgba(255,255,255,.95);
@@ -229,33 +225,6 @@
     background:rgba(255,255,255,.2); border-color:#fff; color:#fff;
   }
   /* outlined avatar: gray rim, gray glyph, transparent interior */
-  .acct{
-    width:38px; height:38px; border-radius:50%; flex:0 0 auto;
-    background:transparent;
-    border:1.6px solid rgba(95,104,117,.5);
-    color:rgba(95,104,117,.85);
-    display:flex; align-items:center; justify-content:center;
-    transition:background 140ms ease, border-color 140ms ease, color 140ms ease;
-  }
-  .acct:hover{
-    background:rgba(255,255,255,.4);
-    border-color:rgba(95,104,117,.8);
-    color:#3D4552;
-  }
-  .acct:focus-visible{outline:none; box-shadow:0 0 0 3px rgba(143,176,224,.6);}
-  .acct svg{width:19px; height:19px; display:block;}
-  /* over a photo, switch the rim and glyph to white so it stays legible */
-  body.photo .acct,
-  body.lt .acct{
-    border-color:rgba(255,255,255,.75);
-    color:rgba(255,255,255,.92);
-  }
-  body.photo .acct:hover,
-  body.lt .acct:hover{
-    background:rgba(255,255,255,.2);
-    border-color:#fff; color:#fff;
-  }
-
   .waffle-wrap{position:relative; z-index:20;}
   .waffle-btn{
     width:38px; height:38px; border-radius:50%;
@@ -283,17 +252,67 @@
   .waffle-panel{
     position:absolute; top:50px; right:0;
     background:#fff; border:1px solid var(--line); border-radius:18px;
-    padding:12px; box-shadow:0 14px 40px rgba(10,14,20,.20);
-    display:none; grid-template-columns:repeat(3,72px); gap:2px;
+    padding:14px; box-shadow:0 14px 40px rgba(10,14,20,.20);
+    display:none; grid-template-columns:repeat(3,88px); gap:2px;
   }
   .waffle-panel.open{display:grid;}
   .waffle-item{
-    display:flex; flex-direction:column; align-items:center; gap:7px;
-    padding:11px 4px; border-radius:12px; transition:background 120ms ease;
+    display:flex; flex-direction:column; align-items:center; gap:9px;
+    padding:13px 6px; border-radius:14px; transition:background 120ms ease;
   }
   .waffle-item:hover{background:rgba(31,39,51,.05);}
-  .waffle-item img{width:26px; height:26px; display:block; border-radius:6px;}
-  .waffle-item span{font-size:10.5px; font-weight:500; color:var(--muted);}
+  .waffle-item img{width:36px; height:36px; display:block; border-radius:8px;}
+  .waffle-item span{font-size:11.5px; font-weight:500; color:var(--muted);}
+
+  /* ---- utilities: things WE built, deliberately not in the Google
+     waffle above -- that dropdown only reads clearly if everything in
+     it really is a Google product. This is its own small menu instead,
+     so it can grow later without ever raising that confusion. ---- */
+  .util-wrap{position:relative;}
+  .util-btn{
+    width:40px; height:40px; border-radius:50%;
+    background:transparent; border:1.6px solid rgba(95,104,117,.5);
+    color:rgba(95,104,117,.9); cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4.5px;
+    transition:background 140ms ease, border-color 140ms ease, color 140ms ease;
+  }
+  .util-btn .hbar{
+    width:17px; height:1.9px; border-radius:2px; background:currentColor;
+    transition:transform 200ms ease, opacity 150ms ease;
+  }
+  .util-btn[aria-expanded="true"] .hbar:nth-child(1){ transform:translateY(6.4px) rotate(45deg); }
+  .util-btn[aria-expanded="true"] .hbar:nth-child(2){ opacity:0; }
+  .util-btn[aria-expanded="true"] .hbar:nth-child(3){ transform:translateY(-6.4px) rotate(-45deg); }
+  .util-btn:hover{background:rgba(255,255,255,.4); border-color:rgba(95,104,117,.8); color:#3D4552;}
+  .util-btn:focus-visible{outline:none; box-shadow:0 0 0 3px rgba(143,176,224,.6);}
+  body.photo .util-btn{border-color:rgba(255,255,255,.75); color:rgba(255,255,255,.92);}
+  body.photo .util-btn:hover{background:rgba(255,255,255,.2); border-color:#fff; color:#fff;}
+
+  .util-panel{
+    position:absolute; top:50px; right:0; width:190px;
+    background:#fff; border:1px solid var(--line); border-radius:16px;
+    padding:8px; box-shadow:0 14px 40px rgba(10,14,20,.20);
+    display:none;
+  }
+  .util-panel.open{display:block;}
+  .util-head{
+    font-size:10.5px; font-weight:700; letter-spacing:.11em; text-transform:uppercase;
+    color:var(--muted); padding:6px 10px 8px;
+  }
+  .util-item{
+    display:flex; align-items:center; gap:11px; width:100%;
+    padding:9px 10px; border-radius:10px; text-decoration:none; color:var(--ink);
+    font-size:13.5px; font-weight:500; transition:background 110ms ease;
+  }
+  .util-item:hover{background:rgba(31,39,51,.055);}
+  .util-ico{
+    width:30px; height:30px; border-radius:9px; flex:0 0 auto;
+    background:var(--accent); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .util-ico svg{width:16px; height:16px;}
+  .util-rule{height:1px; background:var(--line); margin:5px 8px;}
+  .util-ico-g{background:#fff; border:1px solid var(--line);}
 
   .foot{
     margin-top:30px; font-size:11.5px; font-weight:400;
@@ -613,45 +632,6 @@
   .search .tool.listening{background:rgba(234,67,53,.12);}
   .search .tool.listening svg{fill:#EA4335;}
 
-  /* ---- voice search overlay ---- */
-  .voice-overlay{
-    position:fixed; inset:0; z-index:100;
-    background:rgba(20,26,35,.55);
-    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:26px;
-  }
-  .voice-overlay[hidden]{display:none;}
-  .voice-cancel{
-    position:absolute; top:22px; right:24px;
-    width:40px; height:40px; border-radius:50%; border:0; cursor:pointer;
-    background:rgba(255,255,255,.14); color:#fff; font-size:22px; line-height:1;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .voice-cancel:hover{background:rgba(255,255,255,.24);}
-  .voice-mic{
-    width:84px; height:84px; border-radius:50%;
-    background:var(--accent); cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 0 0 0 rgba(41,74,122,.55);
-    animation:voice-pulse 1.6s ease-out infinite;
-  }
-  .voice-mic svg{width:34px; height:34px;}
-  @keyframes voice-pulse{
-    0%  { box-shadow:0 0 0 0 rgba(41,74,122,.45); }
-    70% { box-shadow:0 0 0 26px rgba(41,74,122,0); }
-    100%{ box-shadow:0 0 0 0 rgba(41,74,122,0); }
-  }
-  .voice-text{
-    max-width:min(560px,84vw); text-align:center;
-    font-family:"Instrument Serif",Georgia,serif; font-style:italic;
-    font-size:clamp(20px,3.4vw,28px); line-height:1.4; color:#fff;
-    text-shadow:0 1px 10px rgba(0,0,0,.4);
-  }
-  .voice-text.placeholder{opacity:.7;}
-  .voice-hint{
-    font-family:"Inter",sans-serif; font-size:12px; color:rgba(255,255,255,.6);
-  }
   .divider{width:1px; height:22px; background:var(--line); flex:0 0 auto;}
   body.photo .foot{color:rgba(255,255,255,.9); text-shadow:0 1px 8px rgba(8,12,18,.6);}
   body.lt .foot{color:rgba(255,255,255,.9); text-shadow:0 1px 8px rgba(8,12,18,.6);}
@@ -667,7 +647,7 @@
   }
   @media (max-width:560px){
     body{padding-top:110px;}
-    .topbar .tlink{display:none;}   /* Images link folds away; waffle + account remain */
+    .topbar .tlink{display:none;}   /* Gmail text folds away on narrow windows; icons remain */
   }
   /* the verse lives in the bottom-left corner; on small windows the board
      grows into that space, so it steps aside rather than overlapping */
@@ -701,16 +681,38 @@
 
   <div class="topbar">
     <a class="tlink" href="https://mail.google.com">Gmail</a>
-    <a class="tlink" id="imgLink" href="https://www.google.com/imghp?safe=active">Images</a>
     <div class="waffle-wrap">
     <button class="waffle-btn" id="waffleBtn" aria-label="Google apps" aria-expanded="false">
       <span class="waffle-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
     </button>
     <div class="waffle-panel" id="wafflePanel" role="menu"></div>
     </div>
-    <a class="acct" href="https://myaccount.google.com" aria-label="Your Google account" title="Your account">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="9.2" r="3.3"/><path d="M5.8 19.6a6.4 6.4 0 0 1 12.4 0"/></svg>
-    </a>
+    <div class="util-wrap">
+      <button class="util-btn" id="utilBtn" aria-label="Menu" aria-expanded="false" title="Menu">
+        <span class="hbar"></span><span class="hbar"></span><span class="hbar"></span>
+      </button>
+      <div class="util-panel" id="utilPanel" role="menu">
+        <div class="util-head">School tools</div>
+        <a class="util-item" href="camera.html" role="menuitem">
+          <span class="util-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          </span>
+          <span>Camera</span>
+        </a>
+        <div class="util-rule"></div>
+        <a class="util-item" href="https://myaccount.google.com" role="menuitem">
+          <span class="util-ico util-ico-g">
+            <svg viewBox="0 0 48 48" width="16" height="16">
+              <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
+              <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
+              <path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/>
+              <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
+            </svg>
+          </span>
+          <span>Google Account</span>
+        </a>
+      </div>
+    </div>
   </div>
 
   <div class="mast">
@@ -736,9 +738,9 @@
       </div>
       <input type="text" name="q" id="q" placeholder="Search Google or find an app" autocomplete="off" spellcheck="false" aria-label="Search terms" autofocus>
       <input type="hidden" name="safe" value="active" id="safeField">
-      <button type="button" class="tool" id="micBtn" aria-label="Search by voice" title="Search by voice">
+      <a class="tool" href="https://www.google.com/" aria-label="Search by voice on Google" title="Search by voice on Google">
         <svg viewBox="0 0 24 24" fill="#5F6875"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3z"/><path d="M18 11a1 1 0 0 0-2 0 4 4 0 0 1-8 0 1 1 0 0 0-2 0 6 6 0 0 0 5 5.9V20h2v-3.1A6 6 0 0 0 18 11z"/></svg>
-      </button>
+      </a>
       <a class="tool" href="https://lens.google.com" aria-label="Search with an image" title="Search with an image">
         <svg viewBox="0 0 24 24" fill="none" stroke="#5F6875" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 1 2-2h2l1.5-2h7L17 7h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.4"/></svg>
       </a>
@@ -836,17 +838,6 @@
     </div>
   </div>
 
-  <!-- voice search overlay: a dedicated listening screen instead of a
-       silent inline mic, so a pause mid-sentence doesn't cut it off -->
-  <div class="voice-overlay" id="voiceOverlay" hidden>
-    <button type="button" class="voice-cancel" id="voiceCancel" aria-label="Cancel">&times;</button>
-    <div class="voice-mic" id="voiceMic" role="button" aria-label="Finish and search now" title="Tap to search now">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3z"/><path d="M18 11a1 1 0 0 0-2 0 4 4 0 0 1-8 0 1 1 0 0 0-2 0 6 6 0 0 0 5 5.9V20h2v-3.1A6 6 0 0 0 18 11z"/></svg>
-    </div>
-    <div class="voice-text" id="voiceText">Listening&hellip;</div>
-    <div class="voice-hint">Tap the mic, or press Enter, when you're done</div>
-  </div>
-
 <script>
 /* =================================================================
    THE LIST YOU MAINTAIN
@@ -886,6 +877,7 @@
     { name:"IXL", sub:"Math & ELA practice", url:"https://www.ixl.com/signin/stpmuskego", icon:"ixl", groups:["35"] },
     { name:"XtraMath", sub:"Math fact fluency", url:"https://xtramath.org", icon:"xtramath", groups:["35"] },
     { name:"MobyMax", sub:"Skill practice", url:"http://www.mobymax.com/wi3002", icon:"mobymax", groups:["35"] },
+    { name:"Canva", sub:"Design & create", url:"https://www.canva.com", icon:"canva" },
     { name:"ThinkCerca", sub:"Reading & argument writing", url:"https://learn.thinkcerca.com/", icon:"thinkcerca", groups:["68"] },
     { name:"Seterra", sub:"Geography practice", url:"https://www.geoguessr.com/seterra", icon:"seterra", groups:["68"] }
     ,{ name:"Prodigy", sub:"Math game", url:"https://play.prodigygame.com", icon:"prodigy", groups:["35"] },
@@ -894,7 +886,6 @@
     { name:"BadgerLink", sub:"Wisconsin's library resources", url:"https://badgerlink.dpi.wi.gov", icon:"badgerlink" },
     { name:"Britannica School", sub:"Encyclopedia you can cite", url:"https://www.wiscat.net/ext/validateglobal.php?cid=stwi&lid=stwi&dataid=452", icon:"britannica" },
     { name:"Typing.com", sub:"Practice typing", url:"https://www.typing.com", icon:"typing" },
-    { name:"Canva", sub:"Design & create", url:"https://www.canva.com", icon:"canva" },
 
     { name:"Games", sub:"When you're done", url:"https://stp-muskego.github.io/game-launcher/", icon:"games", groups:["games"] },
   ];
@@ -1655,116 +1646,6 @@
     });
   })();
 
-  /* ---- voice search --------------------------------------------
-     Opens a dedicated listening screen instead of just lighting up the
-     inline mic. That matters because a plain inline mic with Chrome's
-     default settings can finalize on the first short pause -- cutting
-     a student off after one word. This screen listens continuously and
-     shows the words live as they're recognized, the same way Google's
-     own "Speak now" screen does, so a normal pause mid-sentence doesn't
-     end the search early. It only finishes when the browser itself
-     detects real silence.
-
-     The first time a student taps it, Chrome asks for microphone
-     permission -- you can pre-approve this for the student OU in the
-     Admin console so they never see the prompt. If the browser doesn't
-     support speech recognition at all, the mic button hides. */
-  (function(){
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const btn = document.getElementById("micBtn");
-    if(!SR){ btn.style.display="none"; return; }
-
-    const overlay = document.getElementById("voiceOverlay");
-    const micEl   = document.getElementById("voiceMic");
-    const textEl  = document.getElementById("voiceText");
-    const cancel  = document.getElementById("voiceCancel");
-    const input   = document.getElementById("q");
-    const form    = document.getElementById("searchForm");
-
-    const rec = new SR();
-    rec.lang = "en-US";
-    rec.continuous = true;      // don't stop after the first phrase
-    rec.interimResults = true;  // show words as they're heard
-    rec.maxAlternatives = 1;
-
-    let finalText = "";
-    let cancelled = false;
-    let silenceTimer = null, hardStopTimer = null;
-
-    /* continuous mode alone doesn't reliably stop on its own -- on some
-       platforms it will just keep listening forever with no natural
-       end. So this ends it deliberately: after a short pause with no
-       new speech, and always by this hard ceiling no matter what. */
-    const SILENCE_MS   = 1600;
-    const HARD_STOP_MS = 20000;
-
-    function clearTimers(){
-      clearTimeout(silenceTimer); clearTimeout(hardStopTimer);
-      silenceTimer = null; hardStopTimer = null;
-    }
-    function resetSilenceTimer(){
-      clearTimeout(silenceTimer);
-      silenceTimer = setTimeout(finish, SILENCE_MS);
-    }
-    /* also callable directly: pressing Enter or tapping the mic again
-       finishes immediately instead of waiting out the pause */
-    function finish(){ try{ rec.stop(); }catch(e){} }
-
-    function open(){
-      finalText = ""; cancelled = false;
-      textEl.textContent = "Listening\u2026";
-      textEl.classList.add("placeholder");
-      overlay.hidden = false;
-      try{ rec.start(); }catch(e){}
-      resetSilenceTimer();
-      hardStopTimer = setTimeout(finish, HARD_STOP_MS);
-    }
-    function close(){
-      clearTimers();
-      overlay.hidden = true;
-      try{ rec.stop(); }catch(e){}
-    }
-
-    btn.addEventListener("click", open);
-    cancel.addEventListener("click", ()=>{ cancelled = true; close(); });
-    overlay.addEventListener("click", e=>{
-      if (e.target === overlay){ cancelled = true; close(); }
-    });
-    /* tapping the mic again, or pressing Enter, means "I'm done" --
-       finish right now instead of waiting for the pause timer */
-    micEl.addEventListener("click", finish);
-    document.addEventListener("keydown", e=>{
-      if (!overlay.hidden && e.key === "Enter") finish();
-    });
-
-    rec.onresult = e => {
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++){
-        const seg = e.results[i];
-        if (seg.isFinal) finalText += seg[0].transcript;
-        else interim += seg[0].transcript;
-      }
-      const shown = (finalText + interim).trim();
-      textEl.textContent = shown || "Listening\u2026";
-      textEl.classList.toggle("placeholder", !shown);
-      resetSilenceTimer();   // still talking -- push the pause timeout back
-    };
-
-    rec.onend = () => {
-      clearTimers();
-      overlay.hidden = true;
-      const said = finalText.trim();
-      if (cancelled || !said) return;
-      input.value = said;
-      /* requestSubmit fires the real 'submit' event (with a fallback for
-         older engines), so the Google/Drive switcher still applies --
-         a plain form.submit() would skip it and always go to Google. */
-      if (form.requestSubmit) form.requestSubmit();
-      else document.querySelector(".go").click();
-    };
-
-    rec.onerror = () => { clearTimers(); overlay.hidden = true; };
-  })();
 
   /* ---- announcements, fed by a Google Sheet -----------------------
      SETUP (one time):
@@ -1850,33 +1731,6 @@
         }
       }
     }).catch(()=>{ /* unreachable Sheet: strip stays hidden */ });
-  })();
-
-  /* ---- Images: image-searches whatever is in the box ----
-     Clicking with an empty box just focuses the box instead of
-     dumping students on Google's generic image-suggestions page. */
-  (function(){
-    const link = document.getElementById("imgLink");
-    const input = document.getElementById("q");
-
-    /* Deliberately does NOT open Google's Images landing page. That page now
-       serves a personalised "For you" feed -- endless scroll, tuned to the
-       student's own activity. SafeSearch filters explicit material but does
-       nothing about distraction, so the button simply waits for a query. */
-    function sync(){
-      const has = input.value.trim().length > 0;
-      link.classList.toggle("idle", !has);
-      link.title = has ? "Search images for what you typed" : "Type something first, then search images";
-    }
-    input.addEventListener("input", sync);
-    sync();
-
-    link.addEventListener("click", e => {
-      e.preventDefault();
-      const v = input.value.trim();
-      if (!v){ input.focus(); return; }
-      window.location.href = "https://www.google.com/search?tbm=isch&safe=active&q="+encodeURIComponent(v);
-    });
   })();
 
   /* ---- quick notes ----------------------------------------------
@@ -2076,6 +1930,20 @@
     if (wpanel.contains(e.target) || wbtn.contains(e.target)) return;
     wpanel.classList.remove("open");
     wbtn.setAttribute("aria-expanded","false");
+  });
+
+  /* ---- Utilities (school tools) menu ---- */
+  const utilBtn   = document.getElementById("utilBtn");
+  const utilPanel = document.getElementById("utilPanel");
+  utilBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    const open = utilPanel.classList.toggle("open");
+    utilBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  document.addEventListener("click", e => {
+    if (utilPanel.contains(e.target) || utilBtn.contains(e.target)) return;
+    utilPanel.classList.remove("open");
+    utilBtn.setAttribute("aria-expanded","false");
   });
 </script>
 </body>
