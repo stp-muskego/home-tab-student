@@ -224,17 +224,27 @@
   async function listCameras(){
     try{
       const all = await navigator.mediaDevices.enumerateDevices();
-      devices = all.filter(d => d.kind === "videoinput");
+      /* Before permission is granted, browsers return cameras with a
+         BLANK deviceId on purpose (a privacy measure -- strictly
+         enforced in incognito). Those entries are useless as targets,
+         so only keep ones with a real id. */
+      devices = all.filter(d => d.kind === "videoinput" && d.deviceId);
       switchBtn.hidden = devices.length < 2;
     }catch(e){ /* not fatal -- just no switch button */ }
   }
 
   async function startCamera(){
     try{
+      /* Ask for "any camera" unless we genuinely hold a real device id
+         from a previous successful grant. Requesting an empty deviceId
+         is an impossible constraint, which Chrome rejects outright --
+         with no permission prompt at all, since no grant could ever
+         satisfy it. That was the bug: click, button vanishes, silence. */
+      const target = devices[deviceIndex];
       stream = await navigator.mediaDevices.getUserMedia({
-        video: devices.length
-          ? { deviceId: { exact: devices[deviceIndex].deviceId } }
-          : { facingMode: "user" },
+        video: (target && target.deviceId)
+          ? { deviceId: { exact: target.deviceId } }
+          : true,
         audio: true
       });
       video.srcObject = stream;
@@ -243,8 +253,17 @@
       await listCameras();
       muteBtn.hidden = false;
     }catch(err){
-      if (err.name === "NotFoundError" || err.name === "OverconstrainedError") showMsg(msgNone);
-      else showMsg(msgDenied);
+      /* NotFound = there really is no camera. NotAllowed = blocked, by
+         the student or by policy. Anything else (including a bad
+         constraint) shouldn't claim "no camera" -- leave the button up
+         so it can simply be tried again. */
+      if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError"){
+        showMsg(msgNone);
+      } else if (err.name === "NotAllowedError" || err.name === "SecurityError"){
+        showMsg(msgDenied);
+      } else {
+        showMsg(msgAsk);
+      }
     }
   }
 
