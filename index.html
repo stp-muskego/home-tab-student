@@ -1661,6 +1661,14 @@
       else { fetchLive().catch(()=>{}); }
     }catch(e){ fetchLive().catch(()=>{}); }
 
+    /* keeps updating even if a student leaves the tab open all class
+       period without ever switching away and back -- previously the
+       only re-check happened on page load or on tab-refocus, so a tab
+       left sitting open could show a frozen number far longer than
+       CACHE_MINUTES actually implied */
+    setInterval(()=>{ if (document.visibilityState === "visible") fetchLive().catch(()=>{}); },
+                CACHE_MINUTES*60000);
+
     /* No refresh button on purpose: pressing one wouldn't make the reading
        more accurate, only less stale, and offering it implies a control the
        student doesn't really have over the forecast. Instead, whenever the
