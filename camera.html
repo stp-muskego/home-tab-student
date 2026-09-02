@@ -22,16 +22,17 @@
   }
   a{color:inherit;}
 
-  .head{width:100%; max-width:760px; display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .head{width:100%; max-width:1140px; display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
   .head h1{font-size:15px; font-weight:600; margin:0; letter-spacing:.01em;}
   .head .sub{font-size:11.5px; color:rgba(255,255,255,.5); margin-top:2px;}
 
   .stage{
-    position:relative; width:100%; max-width:760px; aspect-ratio:4/3;
+    position:relative; width:100%; max-width:1140px; aspect-ratio:4/3;
     background:#000; border-radius:16px; overflow:hidden;
     display:flex; align-items:center; justify-content:center;
   }
-  video{width:100%; height:100%; object-fit:cover; transform:scaleX(-1); display:block;}
+  video{width:100%; height:100%; object-fit:cover; transform:scaleX(-1); display:block;
+        filter:brightness(1.06) contrast(0.93) saturate(0.9) blur(.4px);}
   canvas{display:none;}
 
   .msg{
@@ -64,7 +65,7 @@
   @keyframes flash-pop{0%{opacity:.85;}100%{opacity:0;}}
 
   .controls{
-    width:100%; max-width:760px; display:flex; align-items:center; justify-content:center;
+    width:100%; max-width:1140px; display:flex; align-items:center; justify-content:center;
     gap:22px; margin-top:20px;
   }
   .side-btn{
@@ -75,6 +76,12 @@
   .side-btn:hover{background:rgba(255,255,255,.14);}
   .side-btn svg{width:20px; height:20px;}
   .side-btn[hidden]{visibility:hidden;}
+  .shutter.nudge{animation:shutter-nudge 260ms ease;}
+  @keyframes shutter-nudge{
+    0%,100%{transform:translateX(0);}
+    30%{transform:translateX(-4px);}
+    70%{transform:translateX(4px);}
+  }
 
   .mode-toggle{
     display:flex; background:rgba(255,255,255,.08); border-radius:999px; padding:3px; gap:2px;
@@ -94,7 +101,7 @@
   .shutter.recording .fill{background:var(--danger); border-radius:8px; width:60%; height:60%; margin:20%;}
 
   .strip{
-    width:100%; max-width:760px; margin-top:18px;
+    width:100%; max-width:1140px; margin-top:18px;
     display:flex; gap:10px; flex-wrap:wrap;
   }
   .thumb{
@@ -112,8 +119,14 @@
     position:absolute; bottom:3px; left:5px; font-size:9px; font-weight:700;
     background:rgba(0,0,0,.55); padding:1px 5px; border-radius:4px; letter-spacing:.04em;
   }
+  .thumb.docked{outline:2px solid #F2A03D;}
+  .thumb.docked::after{
+    content:"tap to save"; position:absolute; top:3px; right:5px;
+    font-size:8px; font-weight:700; letter-spacing:.03em; text-transform:uppercase;
+    background:#F2A03D; color:#1a1200; padding:1px 5px; border-radius:4px;
+  }
 
-  .foot-note{max-width:760px; font-size:11px; line-height:1.5; color:rgba(255,255,255,.4); margin-top:18px; text-align:center;}
+  .foot-note{max-width:1140px; font-size:11px; line-height:1.5; color:rgba(255,255,255,.4); margin-top:18px; text-align:center;}
 
   @media (max-width:480px){
     .controls{gap:16px;}
@@ -171,7 +184,7 @@
 
   <div class="strip" id="strip"></div>
 
-  <p class="foot-note">Photos and videos save to your Downloads folder, same as any file you download. Close this tab when you're done &mdash; nothing is kept here.</p>
+  <p class="foot-note">Photos download the instant you take them. Videos wait in the strip above until you tap their download arrow &mdash; up to three at a time. Close this tab when you're done; nothing is kept here.</p>
 
 <script>
   const video    = document.getElementById("video");
@@ -255,6 +268,14 @@
     shutter.setAttribute("aria-label", mode === "photo" ? "Take photo" : "Start recording");
   });
 
+  /* Videos dock in the strip instead of auto-downloading -- up to
+     three waiting at once. A fourth can't start recording until one
+     of the three is actually downloaded, which frees its slot.
+     Photos still download the instant they're taken; there's no
+     reason to hold those back. */
+  let pendingVideos = 0;
+  const MAX_PENDING_VIDEOS = 3;
+
   function addThumb(url, kind){
     const el = document.createElement("div"); el.className = "thumb";
     const media = kind === "photo"
@@ -267,11 +288,29 @@
     dl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M6 12l6 6 6-6"/><path d="M4 21h16"/></svg>';
     el.append(media, tag, dl);
     strip.prepend(el);
-    /* download automatically too -- a thumbnail alone is easy to lose
-       track of, and these are meant to leave the tab, not live in it */
-    const auto = document.createElement("a");
-    auto.href = url; auto.download = dl.download; document.body.appendChild(auto);
-    auto.click(); auto.remove();
+
+    if (kind === "photo"){
+      /* download automatically -- a thumbnail alone is easy to lose
+         track of, and these are meant to leave the tab, not live in it */
+      const auto = document.createElement("a");
+      auto.href = url; auto.download = dl.download; document.body.appendChild(auto);
+      auto.click(); auto.remove();
+    } else {
+      pendingVideos++;
+      el.classList.add("docked");
+      dl.addEventListener("click", ()=>{
+        if (!el.classList.contains("docked")) return;   // already freed
+        el.classList.remove("docked");
+        pendingVideos = Math.max(0, pendingVideos - 1);
+        updateDockWarning();
+      }, { once:false });
+    }
+    updateDockWarning();
+  }
+
+  function updateDockWarning(){
+    const full = pendingVideos >= MAX_PENDING_VIDEOS;
+    shutter.setAttribute("aria-disabled", (mode === "video" && full) ? "true" : "false");
   }
 
   function stamp(){
@@ -286,6 +325,9 @@
     if (!w) return;
     canvas.width = w; canvas.height = h;
     const ctx = canvas.getContext("2d");
+    /* match the live preview's soft correction so the saved photo looks
+       like what was actually seen, not the raw sensor output */
+    ctx.filter = "brightness(1.06) contrast(0.93) saturate(0.9) blur(0.4px)";
     /* the live preview is mirrored (natural, like looking in a mirror) --
        flip the saved image to match what was actually seen on screen,
        same convention every selfie camera uses */
@@ -299,6 +341,10 @@
 
   function startRecording(){
     if (!stream) return;
+    if (pendingVideos >= MAX_PENDING_VIDEOS){
+      shutter.classList.remove("nudge"); void shutter.offsetWidth; shutter.classList.add("nudge");
+      return;
+    }
     recChunks = [];
     const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
       ? "video/webm;codecs=vp9,opus" : "video/webm";
