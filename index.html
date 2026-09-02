@@ -338,6 +338,7 @@
   .wx-block.on{display:flex;}
   .wx-ico{font-size:21px; line-height:1;}
   .wx-t{font-size:16px; font-weight:600; color:var(--ink); letter-spacing:-.01em; line-height:1.15;}
+  .wx-actual{font-size:11px; font-weight:500; color:var(--muted); margin-left:5px;}
   .wx-d{font-size:10.5px; font-weight:500; color:var(--muted); line-height:1.2;}
 
   /* ---- announcement strip ---- */
@@ -672,7 +673,7 @@
     <span class="wx-sep" id="wxSep"></span>
     <span class="wx-block" id="wxBlock">
       <span class="wx-ico" id="wxIco"></span>
-      <span><span class="wx-t" id="wxT"></span><br><span class="wx-d" id="wxD"></span></span>
+      <span><span class="wx-t" id="wxT"></span><span class="wx-actual" id="wxActual"></span><br><span class="wx-d" id="wxD"></span></span>
     </span>
   </div>
 
@@ -1135,7 +1136,36 @@
     ["Speaking truth in love, we may grow up in all things into him.","Ephesians 4:15"],
     ["Whoever is faithful in a very little is faithful also in much.","Luke 16:10"],
     ["I have hidden your word in my heart, that I might not sin against you.","Psalm 119:11"],
-    ["The steps of a man are established by the LORD.","Psalm 37:23"]
+    ["The steps of a man are established by the LORD.","Psalm 37:23"],
+    ["The LORD is my light and my salvation. Whom shall I fear?","Psalm 27:1"],
+    ["Delight yourself in the LORD, and he will give you the desires of your heart.","Psalm 37:4"],
+    ["Better is a little with righteousness, than great revenues with injustice.","Proverbs 16:8"],
+    ["A merry heart makes a cheerful face, but sorrow crushes the spirit.","Proverbs 15:13"],
+    ["Whoever walks with wise men grows wise, but a companion of fools suffers harm.","Proverbs 13:20"],
+    ["Where there is no guidance, a people falls; but in the multitude of counselors there is victory.","Proverbs 11:14"],
+    ["Even a child makes himself known by his doings, whether his work is pure and right.","Proverbs 20:11"],
+    ["The name of the LORD is a strong tower; the righteous run to him, and are safe.","Proverbs 18:10"],
+    ["Train up a child in the way he should go, and when he is old he will not depart from it.","Proverbs 22:6"],
+    ["Be strong, all you people of the land, says the LORD, and work, for I am with you.","Haggai 2:4"],
+    ["I sought the LORD, and he answered me, and delivered me from all my fears.","Psalm 34:4"],
+    ["Taste and see that the LORD is good. Blessed is the man who takes refuge in him.","Psalm 34:8"],
+    ["The LORD is close to the brokenhearted, and saves those who are crushed in spirit.","Psalm 34:18"],
+    ["Weeping may stay for the night, but joy comes in the morning.","Psalm 30:5"],
+    ["The joy of the LORD is your strength.","Nehemiah 8:10"],
+    ["Two are better than one, because they have a good reward for their labor.","Ecclesiastes 4:9"],
+    ["He has made everything beautiful in its time.","Ecclesiastes 3:11"],
+    ["Whatever your hand finds to do, do it with your might.","Ecclesiastes 9:10"],
+    ["Do not be anxious about anything, but in everything, by prayer and petition, let your requests be made known to God.","Philippians 4:6"],
+    ["I have learned, in whatever state I am, to be content.","Philippians 4:11"],
+    ["My God will supply every need of yours according to his riches in glory.","Philippians 4:19"],
+    ["Finally, brothers, whatever things are true, whatever things are honorable, think about these things.","Philippians 4:8"],
+    ["Do all things without complaining and arguing.","Philippians 2:14"],
+    ["Owe no one anything, except to love one another.","Romans 13:8"],
+    ["We know that all things work together for good for those who love God.","Romans 8:28"],
+    ["May the God of hope fill you with all joy and peace in believing.","Romans 15:13"],
+    ["Bear one another's burdens, and so fulfill the law of Christ.","Galatians 6:2"],
+    ["The fruit of the Spirit is love, joy, peace, patience, kindness, goodness, faithfulness.","Galatians 5:22"],
+    ["Let no corrupt speech proceed out of your mouth, but only what is good for building up.","Ephesians 4:29"]
   ];
 
   (function(){
@@ -1587,18 +1617,17 @@
     function show(d){
       const c = CODES[d.code] || ["\u{1F321}\uFE0F",""];
       document.getElementById("wxIco").textContent = c[0];
-      document.getElementById("wxT").textContent = Math.round(d.temp)+"\u00B0F";
 
-      /* line 2: condition, feels-like when it differs, TODAY'S forecast
-         range, rain chance. Labeled "Today" -- not "now" -- because the
-         high/low are the whole day's forecast: before the afternoon peak
-         or after the morning low, the current reading will never equal
-         them. That's not a data error, it's what every weather app does;
-         the label just says so instead of implying they should match. */
+      /* headline is "feels like", not actual -- it's the more useful
+         number (what you'd actually dress for), with the plain reading
+         right behind it in case the two disagree by a lot. High/low are
+         dropped entirely: they're tomorrow-afternoon numbers wearing a
+         "now" label, and that mismatch was the whole complaint. */
+      const feelsVal = (d.feels != null) ? Math.round(d.feels) : Math.round(d.temp);
+      document.getElementById("wxT").textContent = "Feels "+feelsVal+"\u00B0";
+      document.getElementById("wxActual").textContent = "actual "+Math.round(d.temp)+"\u00B0";
+
       const bits = [c[1]];
-      if (d.feels != null && Math.abs(d.feels - d.temp) >= 3)
-        bits.push("Feels "+Math.round(d.feels)+"\u00B0");
-      if (d.hi != null) bits.push("Today "+Math.round(d.hi)+"\u00B0/"+Math.round(d.lo)+"\u00B0");
       if (d.rain != null && d.rain >= 20) bits.push(d.rain+"% rain");
       document.getElementById("wxD").textContent = bits.join("  \u00B7  ");
 
